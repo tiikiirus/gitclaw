@@ -42,6 +42,10 @@ on:
         description: "Runner label"
         type: string
         default: "ubuntu-latest"
+      setup_bun:
+        description: "Run oven-sh/setup-bun. Set false when the runner has Bun preinstalled (self-hosted); avoids the Windows-service symlink EPERM."
+        type: boolean
+        default: true
       timeout_minutes:
         description: "Job timeout in minutes"
         type: number
@@ -85,6 +89,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun
+        if: inputs.setup_bun != false
         uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
