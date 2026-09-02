@@ -79,7 +79,7 @@ jobs:
       - name: Checkout Gitclaw runtime
         uses: actions/checkout@v7
         with:
-          repository: ${{ inputs.central_repo || 'tiikiirus/gitclaw-reviewer' }}
+          repository: ${{ inputs.central_repo || 'tiikiirus/gitclaw' }}
           ref: ${{ inputs.central_ref }}
           token: ${{ secrets.GITCLAW_TOKEN || github.token }}
           persist-credentials: false

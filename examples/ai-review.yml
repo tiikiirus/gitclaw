@@ -33,9 +33,9 @@ jobs:
         fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
         github.event.pull_request.author_association || github.event.issue.author_association
       )
-    uses: tiikiirus/gitclaw-reviewer/.github/workflows/review.yml@main
+    uses: tiikiirus/gitclaw/.github/workflows/review.yml@main
     with:
-      central_repo: tiikiirus/gitclaw-reviewer
+      central_repo: tiikiirus/gitclaw
       central_ref: main
       agent_name: Gitclaw Agent
       script: lifecycle/main.ts
@@ -54,9 +54,9 @@ jobs:
   # qa-claw:
   #   name: QA Claw
   #   if: <same policy as above>
-  #   uses: tiikiirus/gitclaw-reviewer/.github/workflows/review.yml@main
+  #   uses: tiikiirus/gitclaw/.github/workflows/review.yml@main
   #   with:
-  #     central_repo: tiikiirus/gitclaw-reviewer
+  #     central_repo: tiikiirus/gitclaw
   #     agent_name: QA Claw
   #     script: lifecycle/qa_sdet.ts
   #     marker: "<!-- agent:qa-claw -->"
