@@ -1,0 +1,17 @@
+{
+  "name": "<repo>-reviewer",
+  "model": "auto",
+  "temperature": 0.1,
+  "rules": [
+    "Project-specific hard constraints the reviewer must enforce, one per line.",
+    "Example: 'Reject changes to core logic without a Task Card + TDD evidence'."
+  ],
+  "exclude": [
+    "Wiki/**",
+    "docs/**",
+    "tests/**",
+    "*.md",
+    "package-lock.json",
+    "bun.lock"
+  ]
+}

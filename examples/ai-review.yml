@@ -1,0 +1,63 @@
+# Caller template — put this file in the ATTACHING repository as
+# .github/workflows/ai-review.yml, then add the repository secrets listed
+# below. That is the whole attach procedure.
+#
+# Rename/adjust freely; the reusable workflow receives everything via
+# `with:` / `secrets:`.
+
+name: AI Reviewer
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  gitclaw:
+    name: Gitclaw Agent
+    # pull_request_target has repository secrets. Do not run for external or
+    # bot authors; the runtime never checks out the PR head.
+    # github.event.pull_request exists for pull_request_target, github.event.issue
+    # for issues/issue_comment — `||` picks whichever is present.
+    if: >
+      github.event.sender.type != 'Bot' &&
+      contains(
+        fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+        github.event.pull_request.author_association || github.event.issue.author_association
+      )
+    uses: tiikiirus/gitclaw-reviewer/.github/workflows/review.yml@main
+    with:
+      central_repo: tiikiirus/gitclaw-reviewer
+      central_ref: main
+      agent_name: Gitclaw Agent
+      script: lifecycle/main.ts
+      marker: "<!-- agent:gitclaw -->"
+      runs_on: ubuntu-latest
+      timeout_minutes: 12
+    secrets:
+      LLM_PROXY_API_KEY: ${{ secrets.LLM_PROXY_API_KEY }}
+      GITCLAW_TOKEN: ${{ secrets.GITCLAW_TOKEN }}
+      CF_WORKER_URL: ${{ secrets.CF_WORKER_URL }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+
+  # Optional second reviewer (QA / test-coverage specialist). Same runtime,
+  # different prompts and dedup marker:
+  #
+  # qa-claw:
+  #   name: QA Claw
+  #   if: <same policy as above>
+  #   uses: tiikiirus/gitclaw-reviewer/.github/workflows/review.yml@main
+  #   with:
+  #     central_repo: tiikiirus/gitclaw-reviewer
+  #     agent_name: QA Claw
+  #     script: lifecycle/qa_sdet.ts
+  #     marker: "<!-- agent:qa-claw -->"
+  #   secrets: inherit

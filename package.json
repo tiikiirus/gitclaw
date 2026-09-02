@@ -1,0 +1,22 @@
+{
+  "name": "gitclaw",
+  "version": "0.1.0",
+  "description": "Gitclaw AI code reviewer: generic review lifecycle, LLM cascade runtime, Cloudflare Worker proxy, and a reusable GitHub Actions workflow. Repository-agnostic — attaching repos provide only a caller workflow and optional policy files.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test src",
+    "build": "bun build lifecycle/main.ts --outdir .tmp/gitclaw-main --target bun && bun build lifecycle/qa_sdet.ts --outdir .tmp/gitclaw-qa --target bun && bun build src/worker.ts --outdir .tmp/gitclaw-worker --target bun",
+    "format": "prettier --ignore-unknown --write . \"**/*.ts\"",
+    "format:check": "prettier --ignore-unknown --check . \"**/*.ts\""
+  },
+  "dependencies": {
+    "@openrouter/agent": "^0.7.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "prettier": "3.9.6"
+  }
+}

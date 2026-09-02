@@ -1,0 +1,26 @@
+name = "openai-proxy"
+main = "worker.js"
+compatibility_date = "2026-08-16"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[vars]
+TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1"
+TOKENROUTER_MODEL = "z-ai/glm-5.3-free"
+OPENCODE_BASE_URL = "https://opencode.ai/zen/v1"
+OPENCODE_MODEL = "deepseek-v4-flash-free"
+MISTRAL_BASE_URL = "https://api.mistral.ai/v1"
+MISTRAL_MODEL = "mistral-small-latest"
+MODEL_DEFAULT = "z-ai/glm-5.3-free,mistral-small-latest"
+MODEL_PLANNER = "z-ai/glm-5.3-free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_CODER = "z-ai/glm-5.3-free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_REVIEWER = "z-ai/glm-5.3-free,deepseek-v4-flash-free,laguna-s-2.1-free,mistral-small-latest"
+
+# Secrets are intentionally not stored here.
+# Configure runtime secrets in Cloudflare Worker settings or GitHub Actions secrets:
+# - LLM_PROXY_API_KEY / KEY_PLANNER / KEY_CODER / KEY_REVIEWER
+# - TOKENROUTER_API_KEY / TOKENROUTER_API_KEY_BACKUP / TOKENROUTER_API_KEYS
+# - OPENCODE_API_KEY / OPENCODE_API_KEY_BACKUP / OPENCODE_API_KEYS
+# - MISTRAL_API_KEY / MISTRAL_API_KEY_BACKUP / MISTRAL_API_KEYS

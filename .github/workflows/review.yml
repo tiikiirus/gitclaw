@@ -1,0 +1,137 @@
+# Reusable AI reviewer workflow. Living here, in the central Gitclaw repo,
+# keeps the reviewer runtime, prompts, and logic in ONE place; attaching
+# repositories only add a small caller workflow (see examples/ai-review.yml).
+#
+# Trust model (same as the original inline workflow):
+#   - The caller triggers on pull_request_target / issues / issue_comment and
+#     enforces its own author-association policy.
+#   - The reviewed repository is checked out at github.sha, which for
+#     pull_request_target is the TRUSTED BASE commit — PR-head code is never
+#     executed. The PR diff is fetched read-only through the GitHub API.
+#   - This runtime is checked out from inputs.central_ref, so reviewer code
+#     evolves independently of reviewed repositories.
+
+name: AI Reviewer
+
+on:
+  workflow_call:
+    inputs:
+      # Must match the owner/repo used in the caller's `uses:` line.
+      # Falls back to the canonical Gitclaw repo when omitted.
+      central_repo:
+        description: "Repository hosting this reusable workflow (owner/name)"
+        type: string
+        required: false
+      central_ref:
+        description: "Ref of the central repo to run"
+        type: string
+        default: "main"
+      agent_name:
+        description: "Display name used in review submissions"
+        type: string
+        default: "Gitclaw Agent"
+      script:
+        description: "Lifecycle entrypoint to execute"
+        type: string
+        default: "lifecycle/main.ts"
+      marker:
+        description: "Hidden marker embedded in review bodies (dedup key). Must be unique per agent."
+        type: string
+        default: "<!-- agent:gitclaw -->"
+      runs_on:
+        description: "Runner label"
+        type: string
+        default: "ubuntu-latest"
+      timeout_minutes:
+        description: "Job timeout in minutes"
+        type: number
+        default: 12
+    secrets:
+      LLM_PROXY_API_KEY:
+        description: "Bearer token for the Cloudflare LLM router"
+        required: true
+      # Required only when the central repo is private: a PAT (classic, repo
+      # scope) of an account that can read the central repository.
+      GITCLAW_TOKEN:
+        description: "PAT for checking out a private central repo"
+        required: false
+      CF_WORKER_URL:
+        description: "Optional explicit LLM router URL; empty = built-in default"
+        required: false
+      LINEAR_API_KEY:
+        description: "Optional; enables the readLinearIssue tool"
+        required: false
+
+# Every run step pins `shell: bash` (via job defaults) so the workflow behaves
+# identically on ubuntu-latest and self-hosted Windows runners — a bare
+# `run:` on a Windows runner would execute under PowerShell and choke on bash
+# syntax (see the 2026-09-02 dedup-step incident).
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  review:
+    name: ${{ inputs.agent_name }}
+    runs-on: ${{ inputs.runs_on }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    steps:
+      - name: Checkout Gitclaw runtime
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ inputs.central_repo || 'tiikiirus/gitclaw-reviewer' }}
+          ref: ${{ inputs.central_ref }}
+          token: ${{ secrets.GITCLAW_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Runtime unit tests
+        run: bun test src
+
+      - name: Checkout reviewed repository (trusted base SHA)
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: reviewed
+          persist-credentials: false
+
+      - name: Check for an existing review on this SHA
+        id: dedup
+        env:
+          GH_TOKEN: ${{ secrets.GITCLAW_TOKEN || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+          # Marker embedded in the review body by submitReview(). Must stay in
+          # sync with the agentMarker constant in the lifecycle entrypoint.
+          AGENT_MARKER: ${{ inputs.marker }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if [ -z "${PR_NUMBER}" ]; then
+            # No PR context (issue / issue_comment) — never skip.
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          reviews=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews?per_page=20" 2>/dev/null || echo '[]')
+          already=$(printf '%s' "$reviews" | jq -r --arg sha "$HEAD_SHA" --arg marker "$AGENT_MARKER" \
+            '[.[] | select(.commit_id == $sha and .user.login == "github-actions[bot]" and ((.body // "") | contains($marker)))] | length')
+          echo "skip=$([ "${already:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Run ${{ inputs.agent_name }}
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          # Point the runtime's file tools (readRepoFile, searchCode,
+          # buildStaticContext) at the reviewed repository checkout.
+          GITCLAW_REPO_ROOT: reviewed
+          LLM_PROXY_API_KEY: ${{ secrets.LLM_PROXY_API_KEY }}
+          CF_WORKER_URL: ${{ secrets.CF_WORKER_URL }}
+          GITHUB_TOKEN: ${{ github.token }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        run: bun ${{ inputs.script }}
