@@ -45,7 +45,7 @@ describe("TokenRouterAdapter", () => {
   test("normalizes a custom base URL without duplicating v1", () => {
     const adapter = new TokenRouterAdapter();
     const config = adapter.prepareRequest(
-      "qwen/qwen3.8-max-free",
+      "z-ai/glm-5.3-free",
       { messages: [] },
       {
         TOKENROUTER_API_KEY: "secret",

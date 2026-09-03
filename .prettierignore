@@ -1,0 +1,6 @@
+node_modules/
+.tmp/
+dist/
+# Generated deploy bundle (raw bun build output, kept build-identical).
+# Regenerate with `bun run build`; do not hand-edit or prettier-format.
+cloudflare/worker.js

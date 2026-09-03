@@ -27,7 +27,7 @@ const HOP_BY_HOP = new Set([
 ]);
 
 // Default model if none specified in the request
-const DEFAULT_MODEL = "qwen/qwen3.8-max-free";
+const DEFAULT_MODEL = "z-ai/glm-5.3-free";
 
 // Max body size to read (1MB)
 const MAX_BODY_BYTES = 1024 * 1024;

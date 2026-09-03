@@ -1,6 +1,6 @@
 import { ModelInfo, ProviderAdapter, RequestConfig } from "./types";
 
-const DEFAULT_TOKENROUTER_MODEL = "qwen/qwen3.8-max-free";
+const DEFAULT_TOKENROUTER_MODEL = "z-ai/glm-5.3-free";
 const DEFAULT_TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1";
 
 export class TokenRouterAdapter implements ProviderAdapter {

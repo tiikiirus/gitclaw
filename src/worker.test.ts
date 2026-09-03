@@ -475,18 +475,15 @@ describe("Responses API compatibility", () => {
       {
         LLM_PROXY_API_KEY: "proxy-key",
         TOKENROUTER_API_KEYS: "tokenrouter-key-1,tokenrouter-key-2",
-        MODEL_REVIEWER: "qwen/qwen3.8-max-free",
+        MODEL_REVIEWER: "z-ai/glm-5.3-free",
       }
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("X-Provider-Info")).toBe(
-      "tokenrouter/qwen/qwen3.8-max-free"
+      "tokenrouter/z-ai/glm-5.3-free"
     );
-    expect(attemptedModels).toEqual([
-      "qwen/qwen3.8-max-free",
-      "qwen/qwen3.8-max-free",
-    ]);
+    expect(attemptedModels).toEqual(["z-ai/glm-5.3-free", "z-ai/glm-5.3-free"]);
   });
 
   test("reports circuit-breaker cooldown skips in 502 details instead of an empty array", async () => {
@@ -498,7 +495,7 @@ describe("Responses API compatibility", () => {
     const env = {
       LLM_PROXY_API_KEY: "proxy-key",
       TOKENROUTER_API_KEYS: "tokenrouter-key",
-      MODEL_REVIEWER: "qwen/qwen3.8-max-free",
+      MODEL_REVIEWER: "z-ai/glm-5.3-free",
     };
     const request = (body: string) =>
       new Request("https://worker.test/v1/chat/completions", {
