@@ -35,9 +35,17 @@ describe("Responses API compatibility", () => {
       service: "gitclaw-runtime",
       ready: false,
       authentication_configured: false,
-      provider_order: ["tokenrouter", "opencode", "mistral"],
+      provider_order: [
+        "tokenrouter",
+        "groq",
+        "openrouter",
+        "opencode",
+        "mistral",
+      ],
       providers: [
         { id: "tokenrouter", configured: false },
+        { id: "groq", configured: false },
+        { id: "openrouter", configured: false },
         { id: "opencode", configured: false },
         { id: "mistral", configured: false },
       ],
