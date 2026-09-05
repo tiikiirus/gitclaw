@@ -483,7 +483,7 @@ describe("runAgent — Chat Completions API", () => {
     expect(big.length).toBeLessThan(150_000);
     expect(
       big.endsWith(
-        "[tool result truncated: 150000 chars, showing first 120000]"
+        "[tool result truncated: 150000 chars, showing first 30000]"
       )
     ).toBe(true);
   });
