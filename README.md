@@ -15,7 +15,7 @@ src/                     Generic runtime (@gitclaw/runtime equivalent)
   ├── lifecycle.ts       Event parsing, tools, agent runner, review submission
   ├── worker.ts          Cloudflare Worker: LLM provider cascade (router + adapters)
   ├── router.ts          Role/model routing, circuit breakers, fallbacks
-  ├── adapters/          tokenrouter / opencode / mistral adapters
+  ├── adapters/          tokenrouter / groq / openrouter / opencode / mistral adapters
   └── *.test.ts          bun test suite (also runs inside CI before every review)
 lifecycle/               Entrypoints executed by CI
   ├── main.ts            Gitclaw Agent — adversarial reviewer (system prompts)
@@ -64,8 +64,28 @@ in this repo and every attached repo picks them up via `central_ref`
    operate on the reviewed checkout.
 
 > Windows self-hosted runners: every `run:` step in `review.yml` pins
-> `shell: bash`. A bare `run:` on a Windows runner executes under PowerShell,
-> which cannot parse bash — the 2026-09-02 dedup-step outage.
+> `shell: bash`. The workflow includes an automatic `Ensure jq` step with
+> fallback to Python so Windows runners without system-wide `jq` never fail
+> the dedup check with exit 127.
+
+## Provider cascade & rate-limit resilience
+
+The LLM proxy routes requests across independent providers to prevent 429 outages:
+`tokenrouter` → `groq` → `openrouter` → `opencode` → `mistral`.
+
+- **Groq**: fast LPU inference (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`). Tool results are capped at 20,000 chars to fit Groq's 8,000 TPM limit.
+- **OpenRouter**: free multi-model router (`openrouter/free`, `z-ai/glm-5.2:free`, `minimax/minimax-m3:free`).
+- **TokenRouter**: primary free endpoint (`z-ai/glm-5.3-free`).
+- **OpenCode Zen**: fallback (`deepseek-v4-flash-free`, `hy3-free`, `laguna-s-2.1-free`).
+- **Mistral**: fallback (`mistral-small-latest`).
+
+Secrets for the Cloudflare Worker:
+`TOKENROUTER_API_KEYS`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `OPENCODE_API_KEY`, `MISTRAL_API_KEY`.
+
+## Reviewer protocol & author pushback
+
+- **Step budget**: `MAX_AGENT_STEPS = 15`. On the final step, tools are removed and the model is forced to synthesize its findings into the final JSON review, preventing run aborts.
+- **Technical Pushback**: Scepticism means seeking technical correctness, not performative agreement. PR authors and coding agents are encouraged to defend architectural decisions with code references, types, and test evidence. Gitclaw evaluates pushback on its merits and does not persist disproven objections.
 
 ## Configuration
 

@@ -66,7 +66,7 @@ export class MistralAdapter implements ProviderAdapter {
     modelId: string,
     originalBody: Record<string, unknown>,
     env: Record<string, unknown>,
-    key?: string
+    key?: string,
   ): RequestConfig | null {
     const keys = this.getKeys(env);
     if (keys.length === 0) return null;

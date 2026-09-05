@@ -10,7 +10,13 @@ export interface RouterResult {
   errors: string[];
 }
 
-const PROVIDER_ORDER = ["tokenrouter", "groq", "openrouter", "opencode", "mistral"];
+const PROVIDER_ORDER = [
+  "tokenrouter",
+  "groq",
+  "openrouter",
+  "opencode",
+  "mistral",
+];
 
 // In-memory circuit breaker to prevent blindly retrying dead/rate-limited keys.
 // Maps a provider+model+key tuple to the timestamp when it last failed.
@@ -29,7 +35,7 @@ export class CascadeRouter {
     bodyJson: Record<string, unknown>,
     role: Role,
     env: Record<string, unknown>,
-    requestUrl: string
+    requestUrl: string,
   ): Promise<RouterResult> {
     // Inject request path for all adapters
     const parsedUrl = new URL(requestUrl);
@@ -53,7 +59,7 @@ export class CascadeRouter {
     // Role-specific target models (short names from env)
     const targetModels = this._getRoleModels(role, env);
     const attemptedModelIds = new Set(
-      targetModels.flatMap((modelId) => [modelId, expandModelName(modelId)])
+      targetModels.flatMap((modelId) => [modelId, expandModelName(modelId)]),
     );
 
     // === PASS 1: Target models through each provider ===
@@ -62,7 +68,7 @@ export class CascadeRouter {
       env,
       bodyJson,
       hasImages,
-      errors
+      errors,
     );
     if (pass1) return pass1;
 
@@ -73,7 +79,7 @@ export class CascadeRouter {
       bodyJson,
       hasImages,
       attemptedModelIds,
-      errors
+      errors,
     );
   }
 
@@ -83,7 +89,7 @@ export class CascadeRouter {
     env: Record<string, unknown>,
     bodyJson: Record<string, unknown>,
     hasImages: boolean,
-    errors: string[]
+    errors: string[],
   ): Promise<RouterResult | null> {
     for (const modelId of modelIds) {
       const expanded = expandModelName(modelId);
@@ -104,7 +110,7 @@ export class CascadeRouter {
           modelId,
           bodyJson,
           env,
-          errors
+          errors,
         );
         if (result) return result;
       }
@@ -119,7 +125,7 @@ export class CascadeRouter {
     bodyJson: Record<string, unknown>,
     hasImages: boolean,
     excludeModelIds: Set<string>,
-    errors: string[]
+    errors: string[],
   ): Promise<RouterResult> {
     const registry = getRegistry();
 
@@ -140,7 +146,7 @@ export class CascadeRouter {
         model.id,
         bodyJson,
         env,
-        errors
+        errors,
       );
       if (result) return result;
     }
@@ -154,7 +160,7 @@ export class CascadeRouter {
     modelId: string,
     bodyJson: Record<string, unknown>,
     env: Record<string, unknown>,
-    errors: string[]
+    errors: string[],
   ): Promise<RouterResult | null> {
     const keys = adapter.getKeys(env);
     if (keys.length === 0) return null;
@@ -189,7 +195,7 @@ export class CascadeRouter {
       const config = adapter.prepareRequest(modelId, bodyJson, env, key);
       if (!config) {
         errors.push(
-          `${adapter.name} key #${i + 1} model ${modelId} → skipped (no request config)`
+          `${adapter.name} key #${i + 1} model ${modelId} → skipped (no request config)`,
         );
         continue;
       }
@@ -229,7 +235,7 @@ export class CascadeRouter {
               config,
               bodyText,
               resp,
-              errors
+              errors,
             );
           }
           return this._okResult(
@@ -238,7 +244,7 @@ export class CascadeRouter {
             config,
             null,
             resp,
-            errors
+            errors,
           );
         }
 
@@ -279,18 +285,18 @@ export class CascadeRouter {
       } catch (err: any) {
         if (err.name === "AbortError") {
           console.warn(
-            `[Router] ${adapter.name} key #${i + 1} timed out after ${this._getTimeout(adapter.id, env)}ms`
+            `[Router] ${adapter.name} key #${i + 1} timed out after ${this._getTimeout(adapter.id, env)}ms`,
           );
         } else {
           console.error(
             `[Router] Fetch error for ${adapter.name}:`,
-            err.message
+            err.message,
           );
         }
         // If the provider hangs or drops connection, put the key on cooldown so we don't wait 15s for it again
         failedKeysCooldown.set(cbKey, Date.now());
         errors.push(
-          `${adapter.name} key #${i + 1} model ${modelId} → ${err.message}`
+          `${adapter.name} key #${i + 1} model ${modelId} → ${err.message}`,
         );
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -301,7 +307,7 @@ export class CascadeRouter {
 
   private _getEnabledAdapter(
     providerId: string,
-    env: Record<string, unknown>
+    env: Record<string, unknown>,
   ): ProviderAdapter | null {
     const registry = getRegistry();
     const adapter = registry.findAdapter(providerId);
@@ -319,8 +325,8 @@ export class CascadeRouter {
         m.content &&
         Array.isArray(m.content) &&
         (m.content as Array<Record<string, unknown>>).some(
-          (c) => c.type === "image_url"
-        )
+          (c) => c.type === "image_url",
+        ),
     );
   }
 
@@ -347,10 +353,10 @@ export class CascadeRouter {
     config: RequestConfig,
     bodyText: string | null,
     resp: Response,
-    errors: string[]
+    errors: string[],
   ): RouterResult {
     console.log(
-      `[Router] OK: ${adapterName} model=${modelId} status=${resp.status}`
+      `[Router] OK: ${adapterName} model=${modelId} status=${resp.status}`,
     );
     return {
       response:

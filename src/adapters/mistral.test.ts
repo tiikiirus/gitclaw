@@ -9,7 +9,7 @@ describe("MistralAdapter", () => {
         MISTRAL_API_KEY: "primary",
         MISTRAL_API_KEY_BACKUP: "backup",
         MISTRAL_API_KEYS: "third, fourth",
-      })
+      }),
     ).toEqual(["primary", "backup", "third", "fourth"]);
   });
 
@@ -26,7 +26,7 @@ describe("MistralAdapter", () => {
         MISTRAL_API_KEY: "secret",
         MISTRAL_MODEL: "mistral-small-latest",
       },
-      "secret"
+      "secret",
     );
 
     expect(config).toEqual({
@@ -51,7 +51,7 @@ describe("MistralAdapter", () => {
       {
         MISTRAL_API_KEY: "secret",
         MISTRAL_BASE_URL: "https://mistral.test/v1/",
-      }
+      },
     );
 
     expect(config?.url).toBe("https://mistral.test/v1/chat/completions");
@@ -66,7 +66,7 @@ describe("MistralAdapter", () => {
       "voxtral-small-latest",
     ]) {
       expect(
-        adapter.prepareRequest(model, { messages: [] }, env)
+        adapter.prepareRequest(model, { messages: [] }, env),
       ).not.toBeNull();
     }
   });
@@ -83,10 +83,10 @@ describe("MistralAdapter", () => {
       MISTRAL_API_KEY: "secret",
     });
     expect(
-      models.find((m) => m.id === "voxtral-small-latest")?.supportsVision
+      models.find((m) => m.id === "voxtral-small-latest")?.supportsVision,
     ).toBe(true);
     expect(
-      models.find((m) => m.id === "mistral-small-latest")?.supportsVision
+      models.find((m) => m.id === "mistral-small-latest")?.supportsVision,
     ).toBe(false);
   });
 

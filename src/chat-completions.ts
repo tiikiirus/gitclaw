@@ -16,7 +16,7 @@ function messageText(message: ChatMessageLike | undefined): string {
   if (Array.isArray(content)) {
     return content
       .filter(
-        (item: any) => item?.type === "text" && typeof item.text === "string"
+        (item: any) => item?.type === "text" && typeof item.text === "string",
       )
       .map((item: any) => item.text)
       .join("")

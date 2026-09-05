@@ -26,7 +26,7 @@ describe("Responses API compatibility", () => {
   test("reports provider readiness without exposing key material", async () => {
     const unavailable = await worker.fetch(
       new Request("https://worker.test/v1/status"),
-      {}
+      {},
     );
 
     expect(unavailable.status).toBe(503);
@@ -56,7 +56,7 @@ describe("Responses API compatibility", () => {
       {
         TOKENROUTER_API_KEY: "not-returned-to-client",
         LLM_PROXY_API_KEY: "proxy-key-not-returned",
-      }
+      },
     );
     expect(available.status).toBe(200);
     const payload = await available.json();
@@ -87,11 +87,11 @@ describe("Responses API compatibility", () => {
                 { message: { role: "assistant", content: "review complete" } },
               ],
             }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
         throw new Error(`Unexpected upstream URL: ${target}`);
-      }
+      },
     ) as unknown as typeof fetch;
 
     const response = await worker.fetch(
@@ -127,7 +127,7 @@ describe("Responses API compatibility", () => {
         TOKENROUTER_API_KEY: "upstream-key",
         TOKENROUTER_BASE_URL: "https://provider.test/v1",
         LLM_PROXY_API_KEY: "test-proxy-key",
-      }
+      },
     );
 
     expect(response.status).toBe(200);
@@ -182,11 +182,11 @@ describe("Responses API compatibility", () => {
                 { message: { role: "assistant", content: "fallback review" } },
               ],
             }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
         throw new Error(`Unexpected upstream URL: ${target}`);
-      }
+      },
     ) as unknown as typeof fetch;
 
     const response = await worker.fetch(
@@ -207,13 +207,13 @@ describe("Responses API compatibility", () => {
         TOKENROUTER_API_KEY: "tokenrouter-key",
         OPENCODE_API_KEY: "opencode-key",
         MODEL_DEFAULT: "hy3-free",
-      }
+      },
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("X-Provider-Info")).toBe("opencode/hy3-free");
     expect(response.headers.get("X-Provider-Error-0")).toBe(
-      "tokenrouter key #1 model hy3-free ? skipped (no request config)"
+      "tokenrouter key #1 model hy3-free ? skipped (no request config)",
     );
     expect(upstreamBodies).toEqual([
       expect.objectContaining({
@@ -237,7 +237,7 @@ describe("Responses API compatibility", () => {
           // Free models occasionally return 200 with an empty reply.
           return new Response(
             JSON.stringify({ id: "chatcmpl-empty", choices: [] }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
         if (target === "https://opencode.ai/zen/v1/chat/completions") {
@@ -249,11 +249,11 @@ describe("Responses API compatibility", () => {
                 { message: { role: "assistant", content: "fallback review" } },
               ],
             }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
         throw new Error(`Unexpected upstream URL: ${target}`);
-      }
+      },
     ) as unknown as typeof fetch;
 
     const response = await worker.fetch(
@@ -274,13 +274,13 @@ describe("Responses API compatibility", () => {
         TOKENROUTER_MODEL: "empty-200-model",
         OPENCODE_API_KEY: "opencode-key",
         MODEL_DEFAULT: "empty-200-model",
-      }
+      },
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("X-Provider-Info")).toBe("opencode/hy3-free");
     expect(response.headers.get("X-Provider-Error-0")).toContain(
-      "HTTP 200 empty reply"
+      "HTTP 200 empty reply",
     );
   });
 
@@ -300,7 +300,7 @@ describe("Responses API compatibility", () => {
         // Both free models answer empty 200 on the long context.
         return new Response(
           JSON.stringify({ id: "chatcmpl-empty", choices: [] }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
       throw new Error(`Unexpected upstream URL: ${target}`);
@@ -325,7 +325,7 @@ describe("Responses API compatibility", () => {
         OPENCODE_API_KEY: "oc-key",
         MODEL_DEFAULT: "qwen/qwen3.8-max-free",
         MODEL_REVIEWER: "qwen/qwen3.8-max-free,hy3-free,laguna-s-2.1-free",
-      }
+      },
     );
 
     expect(response.status).toBe(502);
@@ -336,7 +336,7 @@ describe("Responses API compatibility", () => {
     expect(joined).toContain("HTTP 200 empty reply");
     // …cascade reached opencode with hy3-free and it was empty too.
     expect(joined).toMatch(
-      /opencode key #[12] model hy3-free → HTTP 200 empty reply/
+      /opencode key #[12] model hy3-free → HTTP 200 empty reply/,
     );
     // OpenCode rejected the tokenrouter model (guard), not silently skipped.
     expect(joined).toContain("skipped (no request config)");
@@ -355,7 +355,7 @@ describe("Responses API compatibility", () => {
             type: "invalid_request_prompt_too_long",
             code: "3059",
           }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
+          { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
       throw new Error(`Unexpected upstream URL: ${target}`);
@@ -377,7 +377,7 @@ describe("Responses API compatibility", () => {
         LLM_PROXY_API_KEY: "proxy-key",
         MISTRAL_API_KEY: "mistral-key",
         MODEL_DEFAULT: "mistral-small-latest",
-      }
+      },
     );
 
     expect(response.status).toBe(502);
@@ -403,7 +403,7 @@ describe("Responses API compatibility", () => {
         // tokenrouter answers empty 200, forcing the cascade to opencode.
         return new Response(
           JSON.stringify({ id: "chatcmpl-empty", choices: [] }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
       if (target === "https://opencode.ai/zen/v1/chat/completions") {
@@ -433,7 +433,7 @@ describe("Responses API compatibility", () => {
         OPENCODE_API_KEY: "oc-key-1,oc-key-2",
         MODEL_DEFAULT: "qwen/qwen3.8-max-free",
         MODEL_REVIEWER: "qwen/qwen3.8-max-free,hy3-free,laguna-s-2.1-free",
-      }
+      },
     );
 
     expect(response.status).toBe(502);
@@ -463,9 +463,9 @@ describe("Responses API compatibility", () => {
               { message: { role: "assistant", content: "fallback ok" } },
             ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      }
+      },
     ) as unknown as typeof fetch;
 
     const response = await worker.fetch(
@@ -484,12 +484,12 @@ describe("Responses API compatibility", () => {
         LLM_PROXY_API_KEY: "proxy-key",
         TOKENROUTER_API_KEYS: "tokenrouter-key-1,tokenrouter-key-2",
         MODEL_REVIEWER: "z-ai/glm-5.3-free",
-      }
+      },
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("X-Provider-Info")).toBe(
-      "tokenrouter/z-ai/glm-5.3-free"
+      "tokenrouter/z-ai/glm-5.3-free",
     );
     expect(attemptedModels).toEqual(["z-ai/glm-5.3-free", "z-ai/glm-5.3-free"]);
   });
@@ -497,7 +497,7 @@ describe("Responses API compatibility", () => {
   test("reports circuit-breaker cooldown skips in 502 details instead of an empty array", async () => {
     // Every model 503s so every key lands on the circuit-breaker cooldown.
     globalThis.fetch = mock(
-      async () => new Response("temporary provider outage", { status: 503 })
+      async () => new Response("temporary provider outage", { status: 503 }),
     ) as unknown as typeof fetch;
 
     const env = {
@@ -521,9 +521,9 @@ describe("Responses API compatibility", () => {
         JSON.stringify({
           model: "auto",
           messages: [{ role: "user", content: "hi" }],
-        })
+        }),
       ),
-      env
+      env,
     );
     expect(first.status).toBe(502);
     const firstPayload = await first.json();
@@ -536,9 +536,9 @@ describe("Responses API compatibility", () => {
         JSON.stringify({
           model: "auto",
           messages: [{ role: "user", content: "hi" }],
-        })
+        }),
       ),
-      env
+      env,
     );
     expect(second.status).toBe(502);
     const payload = await second.json();
@@ -571,9 +571,9 @@ describe("Responses API compatibility", () => {
               },
             ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      }
+      },
     ) as unknown as typeof fetch;
 
     const response = await worker.fetch(
@@ -619,7 +619,7 @@ describe("Responses API compatibility", () => {
         LLM_PROXY_API_KEY: "test-proxy-key",
         TOKENROUTER_API_KEY: "upstream-key",
         TOKENROUTER_BASE_URL: "https://provider.test/v1",
-      }
+      },
     );
 
     expect(response.status).toBe(200);
@@ -666,7 +666,7 @@ describe("Responses API compatibility", () => {
           input: "continue",
         }),
       }),
-      { LLM_PROXY_API_KEY: "test-proxy-key" }
+      { LLM_PROXY_API_KEY: "test-proxy-key" },
     );
     expect(response.status).toBe(400);
     expect(await response.text()).toContain("stateless proxy");
@@ -699,12 +699,12 @@ describe("Streaming compatibility", () => {
           },
           body: JSON.stringify({ stream: true, messages: [] }),
         }),
-        { LLM_PROXY_API_KEY: "proxy-key" }
+        { LLM_PROXY_API_KEY: "proxy-key" },
       );
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Content-Type")).toContain(
-        "text/event-stream"
+        "text/event-stream",
       );
       expect(response.headers.get("Set-Cookie")).toBeNull();
       expect(response.headers.get("X-Provider-Error-7")).toBe("failure 7");
@@ -777,13 +777,13 @@ describe("Streaming compatibility", () => {
           },
           body: JSON.stringify({ stream: true, input: "hello" }),
         }),
-        { LLM_PROXY_API_KEY: "proxy-key" }
+        { LLM_PROXY_API_KEY: "proxy-key" },
       );
       const body = await response.text();
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Content-Type")).toContain(
-        "text/event-stream"
+        "text/event-stream",
       );
       expect(body).toContain("event: response.output_text.delta");
       expect(body).toContain('"delta":"Hel"');
@@ -802,7 +802,7 @@ describe("Worker authentication and roles", () => {
   test("fails closed when no LLM bearer token is configured", async () => {
     globalThis.fetch = mock(async () => {
       throw new Error(
-        "Unconfigured auth must reject before any upstream request"
+        "Unconfigured auth must reject before any upstream request",
       );
     }) as unknown as typeof fetch;
 
@@ -812,7 +812,7 @@ describe("Worker authentication and roles", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "auto", messages: [] }),
       }),
-      { TOKENROUTER_API_KEY: "upstream-key" }
+      { TOKENROUTER_API_KEY: "upstream-key" },
     );
 
     expect(response.status).toBe(503);
@@ -822,7 +822,7 @@ describe("Worker authentication and roles", () => {
   test("rejects an oversized LLM request before parsing or routing", async () => {
     globalThis.fetch = mock(async () => {
       throw new Error(
-        "Oversized input must reject before any upstream request"
+        "Oversized input must reject before any upstream request",
       );
     }) as unknown as typeof fetch;
 
@@ -836,7 +836,7 @@ describe("Worker authentication and roles", () => {
         },
         body: JSON.stringify({ model: "auto", messages: [] }),
       }),
-      { LLM_PROXY_API_KEY: "valid" }
+      { LLM_PROXY_API_KEY: "valid" },
     );
 
     expect(response.status).toBe(413);
@@ -862,7 +862,7 @@ describe("Worker authentication and roles", () => {
         },
         body: oversizedBody,
       }),
-      { LLM_PROXY_API_KEY: "valid" }
+      { LLM_PROXY_API_KEY: "valid" },
     );
 
     expect(response.status).toBe(413);
@@ -898,7 +898,7 @@ describe("Worker authentication and roles", () => {
       response: new Response(
         JSON.stringify({
           choices: [{ message: { role: "assistant", content: "reviewed" } }],
-        })
+        }),
       ),
       providerName: "test-provider",
       modelName: "test-model",
@@ -915,7 +915,7 @@ describe("Worker authentication and roles", () => {
           },
           body: JSON.stringify({ model: "auto", messages: [] }),
         }),
-        { KEY_REVIEWER: "reviewer-key" }
+        { KEY_REVIEWER: "reviewer-key" },
       );
 
       expect(response.status).toBe(200);
@@ -923,7 +923,7 @@ describe("Worker authentication and roles", () => {
         expect.any(Object),
         "reviewer",
         expect.objectContaining({ KEY_REVIEWER: "reviewer-key" }),
-        "https://worker.test/v1/chat/completions"
+        "https://worker.test/v1/chat/completions",
       );
     } finally {
       route.mockRestore();
@@ -943,14 +943,14 @@ describe("GitHub API proxy", () => {
         return new Response(JSON.stringify({ login: "octocat" }), {
           status: 200,
         });
-      }
+      },
     ) as unknown as typeof fetch;
 
     const response = await worker.fetch(
       new Request("https://worker.test/api/v3/user", {
         headers: { Authorization: "Bearer github-proxy-key" },
       }),
-      { KEY_GITHUB_AGENT: "github-proxy-key" }
+      { KEY_GITHUB_AGENT: "github-proxy-key" },
     );
 
     expect(response.status).toBe(200);
@@ -961,7 +961,7 @@ describe("GitHub API proxy", () => {
       }),
     ]);
     expect(upstreamRequests[0].headers.get("Authorization")).toBe(
-      "token github-proxy-key"
+      "token github-proxy-key",
     );
   });
 
@@ -975,9 +975,9 @@ describe("GitHub API proxy", () => {
     const response = await worker.fetch(
       new Request(
         "https://worker.test/api/v3/repos/owner/repository/issues/7?state=open",
-        { headers: { Authorization: "Bearer github-proxy-key" } }
+        { headers: { Authorization: "Bearer github-proxy-key" } },
       ),
-      { KEY_GITHUB_AGENT: "github-proxy-key" }
+      { KEY_GITHUB_AGENT: "github-proxy-key" },
     );
 
     expect(response.status).toBe(200);
@@ -996,7 +996,7 @@ describe("GitHub API proxy", () => {
         method: "DELETE",
         headers: { Authorization: "Bearer github-proxy-key" },
       }),
-      { KEY_GITHUB_AGENT: "github-proxy-key" }
+      { KEY_GITHUB_AGENT: "github-proxy-key" },
     );
 
     expect(response.status).toBe(405);
@@ -1016,13 +1016,13 @@ describe("Registry request-path handling", () => {
   test("uses planning scores for the planner role", async () => {
     globalThis.fetch = mock(async (url: string | Request) => {
       expect(url instanceof Request ? url.url : String(url)).toBe(
-        "https://opencode.ai/zen/v1/models"
+        "https://opencode.ai/zen/v1/models",
       );
       return new Response(
         JSON.stringify({
           data: [{ id: "laguna-s-2.1-free" }, { id: "hy3-free" }],
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     }) as unknown as typeof fetch;
 

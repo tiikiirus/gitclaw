@@ -45,7 +45,7 @@ function addProviderHeaders(headers: Headers, result: RouterResult): Headers {
   if (result.errors.length > MAX_DIAGNOSTIC_HEADERS) {
     headers.set(
       "X-Provider-Errors-Omitted",
-      String(result.errors.length - MAX_DIAGNOSTIC_HEADERS)
+      String(result.errors.length - MAX_DIAGNOSTIC_HEADERS),
     );
   }
   return headers;
@@ -123,7 +123,7 @@ export default {
         JSON.stringify({ status: "ok", service: "gitclaw-runtime" }),
         {
           headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        },
       );
     }
 
@@ -149,7 +149,7 @@ function handleStatus(env: WorkerEnv): Response {
     {
       status: ready ? 200 : 503,
       headers: { "Content-Type": "application/json", ...corsHeaders },
-    }
+    },
   );
 }
 
@@ -196,12 +196,12 @@ function bodyTooLargeResponse(): Response {
     {
       status: 413,
       headers: { "Content-Type": "application/json", ...corsHeaders },
-    }
+    },
   );
 }
 
 async function readBodyWithinLimit(
-  request: Request
+  request: Request,
 ): Promise<string | Response> {
   const contentLength = request.headers.get("Content-Length");
   if (contentLength) {
@@ -270,14 +270,14 @@ async function handleModels(env: WorkerEnv): Promise<Response> {
     }),
     {
       headers: { "Content-Type": "application/json", ...corsHeaders },
-    }
+    },
   );
 }
 
 async function handleChatCompletions(
   request: Request,
   env: WorkerEnv,
-  role: AgentRole
+  role: AgentRole,
 ): Promise<Response> {
   const bodyText = await readBodyWithinLimit(request);
   if (bodyText instanceof Response) return bodyText;
@@ -308,13 +308,13 @@ async function handleChatCompletions(
     bodyJson,
     role,
     env,
-    request.url
+    request.url,
   );
 
   if (result.response) {
     const headers = addProviderHeaders(
       safeUpstreamHeaders(result.response),
-      result
+      result,
     );
 
     return new Response(result.response.body, {
@@ -369,7 +369,7 @@ function responsesContentToChat(content: unknown): unknown | null {
 
 function responsesInputToMessages(
   input: unknown,
-  instructions?: unknown
+  instructions?: unknown,
 ): Array<Record<string, unknown>> | null {
   const messages: Array<Record<string, unknown>> = [];
   if (typeof instructions === "string" && instructions.trim()) {
@@ -495,7 +495,7 @@ function responsesUrlToChatCompletionsUrl(requestUrl: string): string {
 
 function responsesStreamFromChat(
   upstream: Response,
-  result: RouterResult
+  result: RouterResult,
 ): Response {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -517,7 +517,7 @@ function responsesStreamFromChat(
       const emit = (type: string, payload: Record<string, unknown>) => {
         const event = { type, sequence_number: sequenceNumber++, ...payload };
         controller.enqueue(
-          encoder.encode(`event: ${type}\ndata: ${JSON.stringify(event)}\n\n`)
+          encoder.encode(`event: ${type}\ndata: ${JSON.stringify(event)}\n\n`),
         );
       };
       const baseResponse = (status: "in_progress" | "completed") => ({
@@ -711,7 +711,7 @@ function responsesStreamFromChat(
 async function handleResponses(
   request: Request,
   env: WorkerEnv,
-  role: AgentRole
+  role: AgentRole,
 ): Promise<Response> {
   let bodyJson: Record<string, unknown>;
   try {
@@ -734,13 +734,13 @@ async function handleResponses(
       {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      },
     );
   }
 
   const messages = responsesInputToMessages(
     bodyJson.input,
-    bodyJson.instructions
+    bodyJson.instructions,
   );
   if (!messages) {
     return new Response(
@@ -748,7 +748,7 @@ async function handleResponses(
       {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      },
     );
   }
   const tools = responsesToolsToChat(bodyJson.tools);
@@ -759,7 +759,7 @@ async function handleResponses(
       {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      },
     );
   }
   const stream = bodyJson.stream === true;
@@ -785,7 +785,7 @@ async function handleResponses(
     chatBody,
     role,
     env,
-    responsesUrlToChatCompletionsUrl(request.url)
+    responsesUrlToChatCompletionsUrl(request.url),
   );
 
   if (!result.response) {
@@ -800,7 +800,7 @@ async function handleResponses(
       {
         status: 502,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      },
     );
   }
 
@@ -815,7 +815,7 @@ async function handleResponses(
       {
         status: 502,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      },
     );
   }
 
@@ -844,7 +844,7 @@ async function handleResponses(
       name: toolCall.function?.name,
       arguments: toolCall.function?.arguments || "{}",
       status: "completed",
-    }))
+    })),
   );
   if (output.length === 0) {
     output.push({
@@ -857,7 +857,7 @@ async function handleResponses(
 
   const headers = addProviderHeaders(
     new Headers({ "Content-Type": "application/json" }),
-    result
+    result,
   );
   return new Response(
     JSON.stringify({
@@ -869,13 +869,13 @@ async function handleResponses(
       output,
       ...(upstream?.usage ? { usage: upstream.usage } : {}),
     }),
-    { status: 200, headers }
+    { status: 200, headers },
   );
 }
 
 async function handleGitHubProxy(
   request: Request,
-  env: WorkerEnv
+  env: WorkerEnv,
 ): Promise<Response> {
   const expectedToken = env.KEY_GITHUB_AGENT?.trim();
   if (!expectedToken) {
@@ -917,7 +917,7 @@ async function handleGitHubProxy(
   upstreamHeaders.set("User-Agent", "gitclaw-runtime-github-proxy");
   upstreamHeaders.set(
     "Accept",
-    upstreamHeaders.get("Accept") || "application/vnd.github+json"
+    upstreamHeaders.get("Accept") || "application/vnd.github+json",
   );
   upstreamHeaders.set("X-GitHub-Api-Version", "2022-11-28");
   upstreamHeaders.set("Authorization", `token ${providedToken}`);
@@ -954,7 +954,7 @@ async function handleGitHubProxy(
       {
         status: 502,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      },
     );
   }
 }

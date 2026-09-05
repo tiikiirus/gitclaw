@@ -15,7 +15,7 @@ describe("OpenCodeAdapter", () => {
         OPENCODE_API_KEY: "primary",
         OPENCODE_API_KEY_BACKUP: "backup",
         OPENCODE_API_KEYS: "third, fourth",
-      })
+      }),
     ).toEqual(["primary", "backup", "third", "fourth"]);
   });
 
@@ -31,8 +31,8 @@ describe("OpenCodeAdapter", () => {
               { id: "big-pickle" },
             ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        )
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
     ) as unknown as typeof fetch;
 
     const models = await new OpenCodeAdapter().fetchModels({
@@ -54,7 +54,7 @@ describe("OpenCodeAdapter", () => {
         messages: [{ role: "user", content: "review" }],
         tools: [{ type: "function", function: { name: "searchCode" } }],
       },
-      { OPENCODE_API_KEY: "secret" }
+      { OPENCODE_API_KEY: "secret" },
     );
 
     expect(config).toEqual({
@@ -75,7 +75,7 @@ describe("OpenCodeAdapter", () => {
     const config = new OpenCodeAdapter().prepareRequest(
       "qwen/qwen3.8-max-free",
       { messages: [] },
-      { OPENCODE_API_KEY: "secret" }
+      { OPENCODE_API_KEY: "secret" },
     );
 
     expect(config).toBeNull();

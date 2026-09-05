@@ -8,7 +8,7 @@ describe("TokenRouterAdapter", () => {
       adapter.getKeys({
         TOKENROUTER_API_KEY: "primary",
         TOKENROUTER_API_KEY_BACKUP: "backup",
-      })
+      }),
     ).toEqual(["primary", "backup"]);
   });
 
@@ -25,7 +25,7 @@ describe("TokenRouterAdapter", () => {
         TOKENROUTER_API_KEY: "secret",
         TOKENROUTER_MODEL: "qwen/qwen3.8-max-free",
       },
-      "secret"
+      "secret",
     );
 
     expect(config).toEqual({
@@ -50,7 +50,7 @@ describe("TokenRouterAdapter", () => {
       {
         TOKENROUTER_API_KEY: "secret",
         TOKENROUTER_BASE_URL: "https://tokenrouter.test/v1/",
-      }
+      },
     );
 
     expect(config?.url).toBe("https://tokenrouter.test/v1/chat/completions");
@@ -63,14 +63,14 @@ describe("TokenRouterAdapter", () => {
       TOKENROUTER_MODEL: "qwen/qwen3.8-max-free",
     };
     expect(
-      adapter.prepareRequest("hy3-free", { messages: [] }, env)
+      adapter.prepareRequest("hy3-free", { messages: [] }, env),
     ).toBeNull();
     expect(
-      adapter.prepareRequest("laguna-s-2.1-free", { messages: [] }, env)
+      adapter.prepareRequest("laguna-s-2.1-free", { messages: [] }, env),
     ).toBeNull();
     // Its own configured model still passes through.
     expect(
-      adapter.prepareRequest("qwen/qwen3.8-max-free", { messages: [] }, env)
+      adapter.prepareRequest("qwen/qwen3.8-max-free", { messages: [] }, env),
     ).not.toBeNull();
   });
 

@@ -5,7 +5,10 @@ const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
 
 // Groq free tier models - fast LPU inference, 14k req/day, 30 req/min per model
 // Scores tuned for review (critical findings, not generic praise)
-const GROQ_MODEL_SCORES: Record<string, { planning: number; coding: number; review: number }> = {
+const GROQ_MODEL_SCORES: Record<
+  string,
+  { planning: number; coding: number; review: number }
+> = {
   "llama-3.3-70b-versatile": { planning: 88, coding: 88, review: 90 },
   "openai/gpt-oss-120b": { planning: 86, coding: 88, review: 88 },
   "openai/gpt-oss-20b": { planning: 80, coding: 82, review: 82 },
@@ -22,11 +25,7 @@ export class GroqAdapter implements ProviderAdapter {
   enabled = true;
 
   getKeys(env: Record<string, unknown>): string[] {
-    return [
-      env.GROQ_API_KEY,
-      env.GROQ_API_KEY_BACKUP,
-      env.GROQ_API_KEYS,
-    ]
+    return [env.GROQ_API_KEY, env.GROQ_API_KEY_BACKUP, env.GROQ_API_KEYS]
       .filter((value): value is string => typeof value === "string")
       .flatMap((value) => value.split(","))
       .map((key) => key.trim())
@@ -50,18 +49,24 @@ export class GroqAdapter implements ProviderAdapter {
     modelId: string,
     originalBody: Record<string, unknown>,
     env: Record<string, unknown>,
-    key?: string
+    key?: string,
   ): RequestConfig | null {
     const keys = this.getKeys(env);
     if (keys.length === 0) return null;
 
-    const configuredModel = ((env.GROQ_MODEL as string) || "").trim() || DEFAULT_GROQ_MODEL;
-    const requestedModel = !modelId || modelId === "auto" ? configuredModel : modelId;
+    const configuredModel =
+      ((env.GROQ_MODEL as string) || "").trim() || DEFAULT_GROQ_MODEL;
+    const requestedModel =
+      !modelId || modelId === "auto" ? configuredModel : modelId;
 
     if (!isGroqModel(requestedModel)) return null;
 
-    const baseUrl = ((env.GROQ_BASE_URL as string) || DEFAULT_GROQ_BASE_URL).trim().replace(/\/+$/, "");
-    const chatBase = baseUrl.toLowerCase().endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
+    const baseUrl = ((env.GROQ_BASE_URL as string) || DEFAULT_GROQ_BASE_URL)
+      .trim()
+      .replace(/\/+$/, "");
+    const chatBase = baseUrl.toLowerCase().endsWith("/v1")
+      ? baseUrl
+      : `${baseUrl}/v1`;
 
     return {
       url: `${chatBase}/chat/completions`,

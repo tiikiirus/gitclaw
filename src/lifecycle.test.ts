@@ -82,7 +82,7 @@ let originalFetch: typeof fetch;
 let fetchCalls: { url: string; init: RequestInit | undefined }[];
 let fetchResponder: (
   url: string,
-  init: RequestInit | undefined
+  init: RequestInit | undefined,
 ) => Promise<Response>;
 
 beforeEach(() => {
@@ -227,7 +227,7 @@ describe("readLinearIssueTool — server response handling", () => {
     const tools = createTools(makeEvent(), LINEAR_KEY);
     const tool = findReadLinearIssue(tools);
     expect(tool.execute({ issueId: "ABC-1" })).rejects.toThrow(
-      /Linear GraphQL Error/
+      /Linear GraphQL Error/,
     );
   });
 
@@ -237,7 +237,7 @@ describe("readLinearIssueTool — server response handling", () => {
     const tools = createTools(makeEvent(), LINEAR_KEY);
     const tool = findReadLinearIssue(tools);
     expect(tool.execute({ issueId: "ABC-1" })).rejects.toThrow(
-      /Linear API request failed/
+      /Linear API request failed/,
     );
   });
 });
@@ -268,12 +268,12 @@ describe("runAgent — Chat Completions API", () => {
             { message: { role: "assistant", content: "review complete" } },
           ],
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     };
 
     await expect(
-      runAgent("system prompt", [], "review this", makeEvent())
+      runAgent("system prompt", [], "review this", makeEvent()),
     ).resolves.toBe("review complete");
     expect(fetchCalls).toHaveLength(1);
   });
@@ -298,12 +298,12 @@ describe("runAgent — Chat Completions API", () => {
               "Content-Type": "application/json",
               "X-Provider-Info": "tokenrouter/qwen/qwen3.8-max-free",
             },
-          }
+          },
         );
 
       await runAgent("system prompt", [], "review this", makeEvent());
       expect(
-        logs.some((l) => l.includes("tokenrouter/qwen/qwen3.8-max-free"))
+        logs.some((l) => l.includes("tokenrouter/qwen/qwen3.8-max-free")),
       ).toBe(true);
     } finally {
       console.log = originalLog;
@@ -318,7 +318,7 @@ describe("runAgent — Chat Completions API", () => {
         // Free models occasionally return 200 with an empty reply.
         return new Response(
           JSON.stringify({ choices: [{ message: { content: null } }] }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
       return new Response(
@@ -327,12 +327,12 @@ describe("runAgent — Chat Completions API", () => {
             { message: { role: "assistant", content: "review recovered" } },
           ],
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     };
 
     await expect(
-      runAgent("system prompt", [], "review this", makeEvent())
+      runAgent("system prompt", [], "review this", makeEvent()),
     ).resolves.toBe("review recovered");
     expect(requestCount).toBe(3);
   });
@@ -384,7 +384,7 @@ describe("runAgent — Chat Completions API", () => {
               },
             ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
 
@@ -405,12 +405,12 @@ describe("runAgent — Chat Completions API", () => {
             { message: { role: "assistant", content: "final review" } },
           ],
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     };
 
     await expect(
-      runAgent("system prompt", [lookupTool], "review this", makeEvent())
+      runAgent("system prompt", [lookupTool], "review this", makeEvent()),
     ).resolves.toBe("final review");
     expect(calls).toEqual(["prospect"]);
     expect(requestCount).toBe(2);
@@ -453,7 +453,7 @@ describe("runAgent — Chat Completions API", () => {
               },
             ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
 
@@ -467,12 +467,12 @@ describe("runAgent — Chat Completions API", () => {
             { message: { role: "assistant", content: "final review" } },
           ],
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     };
 
     await expect(
-      runAgent("system prompt", [hugeTool], "review this", makeEvent())
+      runAgent("system prompt", [hugeTool], "review this", makeEvent()),
     ).resolves.toBe("final review");
     expect(requestCount).toBe(2);
   });
@@ -483,8 +483,8 @@ describe("runAgent — Chat Completions API", () => {
     expect(big.length).toBeLessThan(150_000);
     expect(
       big.endsWith(
-        "[tool result truncated: 150000 chars, showing first 20000]"
-      )
+        "[tool result truncated: 150000 chars, showing first 20000]",
+      ),
     ).toBe(true);
   });
 });
@@ -507,7 +507,7 @@ describe("readRepoFile — PR-head fallback", () => {
 
   function findReadRepoFile(tools: any[]): any {
     const t = tools.find(
-      (x) => x?.function?.name === "readRepoFile" || x?.name === "readRepoFile"
+      (x) => x?.function?.name === "readRepoFile" || x?.name === "readRepoFile",
     );
     if (!t)
       throw new Error("readRepoFile tool not found in createTools() result");
@@ -522,7 +522,7 @@ describe("readRepoFile — PR-head fallback", () => {
       expect(url).toContain("ref=abc123");
       return new Response(
         JSON.stringify({ content: encoded, encoding: "base64" }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     });
     const prevFetch = globalThis.fetch;
@@ -532,7 +532,7 @@ describe("readRepoFile — PR-head fallback", () => {
     try {
       const tools = createTools(
         { ...makePrEvent(), headSha: "abc123" },
-        "LINEAR_KEY"
+        "LINEAR_KEY",
       );
       const tool = findReadRepoFile(tools);
       const result = await tool.execute({
@@ -556,11 +556,11 @@ describe("readRepoFile — PR-head fallback", () => {
     try {
       const tools = createTools(
         { ...makePrEvent(), headSha: "abc123" },
-        "LINEAR_KEY"
+        "LINEAR_KEY",
       );
       const tool = findReadRepoFile(tools);
       await expect(
-        tool.execute({ filePath: "secret/config.env" })
+        tool.execute({ filePath: "secret/config.env" }),
       ).rejects.toThrow(/not part of PR/);
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {

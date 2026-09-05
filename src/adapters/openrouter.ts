@@ -4,11 +4,18 @@ const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const DEFAULT_OPENROUTER_MODEL = "openrouter/free";
 
 // OpenRouter free models - 50 req/day per model, separate quota per model family
-const OPENROUTER_MODEL_SCORES: Record<string, { planning: number; coding: number; review: number }> = {
+const OPENROUTER_MODEL_SCORES: Record<
+  string,
+  { planning: number; coding: number; review: number }
+> = {
   "openrouter/free": { planning: 82, coding: 85, review: 88 },
   "z-ai/glm-5.2:free": { planning: 82, coding: 86, review: 88 },
   "minimax/minimax-m3:free": { planning: 80, coding: 84, review: 85 },
-  "nvidia/nemotron-3-ultra-550b-a55b:free": { planning: 85, coding: 86, review: 89 },
+  "nvidia/nemotron-3-ultra-550b-a55b:free": {
+    planning: 85,
+    coding: 86,
+    review: 89,
+  },
   "poolside/laguna-s-2.1:free": { planning: 84, coding: 88, review: 88 },
   "cohere/north-mini-code:free": { planning: 78, coding: 86, review: 84 },
 };
@@ -51,18 +58,27 @@ export class OpenRouterAdapter implements ProviderAdapter {
     modelId: string,
     originalBody: Record<string, unknown>,
     env: Record<string, unknown>,
-    key?: string
+    key?: string,
   ): RequestConfig | null {
     const keys = this.getKeys(env);
     if (keys.length === 0) return null;
 
-    const configuredModel = ((env.OPENROUTER_MODEL as string) || "").trim() || DEFAULT_OPENROUTER_MODEL;
-    const requestedModel = !modelId || modelId === "auto" ? configuredModel : modelId;
+    const configuredModel =
+      ((env.OPENROUTER_MODEL as string) || "").trim() ||
+      DEFAULT_OPENROUTER_MODEL;
+    const requestedModel =
+      !modelId || modelId === "auto" ? configuredModel : modelId;
 
     if (!isOpenRouterModel(requestedModel)) return null;
 
-    const baseUrl = ((env.OPENROUTER_BASE_URL as string) || DEFAULT_OPENROUTER_BASE_URL).trim().replace(/\/+$/, "");
-    const chatBase = baseUrl.toLowerCase().endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
+    const baseUrl = (
+      (env.OPENROUTER_BASE_URL as string) || DEFAULT_OPENROUTER_BASE_URL
+    )
+      .trim()
+      .replace(/\/+$/, "");
+    const chatBase = baseUrl.toLowerCase().endsWith("/v1")
+      ? baseUrl
+      : `${baseUrl}/v1`;
 
     return {
       url: `${chatBase}/chat/completions`,

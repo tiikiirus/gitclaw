@@ -43,7 +43,7 @@ export function isInsideRepo(p: string): boolean {
 async function fetchPrDiff(
   repo: string,
   prNumber: number,
-  token: string
+  token: string,
 ): Promise<string> {
   const url = `https://api.github.com/repos/${repo}/pulls/${prNumber}`;
   const response = await fetch(url, {
@@ -55,7 +55,7 @@ async function fetchPrDiff(
   });
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch PR diff: ${response.statusText} (${await response.text()})`
+      `Failed to fetch PR diff: ${response.statusText} (${await response.text()})`,
     );
   }
   return await response.text();
@@ -74,15 +74,15 @@ async function fetchPrFile(
   token: string,
   filePath: string,
   headSha: string,
-  allowedPaths: Set<string>
+  allowedPaths: Set<string>,
 ): Promise<string> {
   if (!allowedPaths.has(filePath)) {
     throw new Error(
-      `Permission denied: '${filePath}' is not part of PR #${prNumber} and cannot be read from the PR head.`
+      `Permission denied: '${filePath}' is not part of PR #${prNumber} and cannot be read from the PR head.`,
     );
   }
   const url = `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(
-    filePath
+    filePath,
   )}?ref=${headSha}`;
   const response = await fetch(url, {
     headers: {
@@ -93,7 +93,7 @@ async function fetchPrFile(
   });
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch PR file '${filePath}': ${response.statusText} (${await response.text()})`
+      `Failed to fetch PR file '${filePath}': ${response.statusText} (${await response.text()})`,
     );
   }
   const data: any = await response.json();
@@ -109,7 +109,7 @@ export async function submitPrReview(
   body: string,
   eventType: "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
   comments: any[],
-  token: string
+  token: string,
 ) {
   const url = `https://api.github.com/repos/${repo}/pulls/${prNumber}/reviews`;
   const headers = {
@@ -137,13 +137,13 @@ export async function submitPrReview(
 
   const errorBody = await response.text();
   console.error(
-    `PR review API error: HTTP ${response.status} ${response.statusText}`
+    `PR review API error: HTTP ${response.status} ${response.statusText}`,
   );
   console.error(`Response body: ${errorBody.substring(0, 500)}`);
 
   if (response.status === 422 && comments && comments.length > 0) {
     console.warn(
-      "422 from PR review API — retrying without inline comments..."
+      "422 from PR review API — retrying without inline comments...",
     );
     const retryResponse = await fetch(url, {
       method: "POST",
@@ -152,18 +152,18 @@ export async function submitPrReview(
     });
     if (retryResponse.ok) {
       console.log(
-        "PR Review submitted successfully (without inline comments)."
+        "PR Review submitted successfully (without inline comments).",
       );
       return;
     }
     const retryBody = await retryResponse.text();
     console.error(
-      `Retry also failed: HTTP ${retryResponse.status} — ${retryBody.substring(0, 300)}`
+      `Retry also failed: HTTP ${retryResponse.status} — ${retryBody.substring(0, 300)}`,
     );
   }
 
   throw new Error(
-    `Failed to submit PR review: ${response.statusText} (${errorBody.substring(0, 200)})`
+    `Failed to submit PR review: ${response.statusText} (${errorBody.substring(0, 200)})`,
   );
 }
 
@@ -171,7 +171,7 @@ export async function postIssueComment(
   repo: string,
   issueNumber: number,
   body: string,
-  token: string
+  token: string,
 ) {
   const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}/comments`;
   const response = await fetch(url, {
@@ -187,7 +187,7 @@ export async function postIssueComment(
   });
   if (!response.ok) {
     throw new Error(
-      `Failed to post issue comment: ${response.statusText} (${await response.text()})`
+      `Failed to post issue comment: ${response.statusText} (${await response.text()})`,
     );
   }
   console.log("Issue comment posted successfully.");
@@ -314,7 +314,7 @@ export async function parseEvent(): Promise<EventInfo> {
   const targetNumber = prNumber || issueNumber;
   if (!targetNumber) {
     console.error(
-      "Error: Could not determine Issue/PR number from event payload."
+      "Error: Could not determine Issue/PR number from event payload.",
     );
     process.exit(1);
   }
@@ -355,7 +355,7 @@ export async function submitReview(
   event: EventInfo,
   result: ReviewResult,
   agentName: string,
-  agentMarker: string
+  agentMarker: string,
 ): Promise<void> {
   const { isPullRequest, prNumber, issueNumber, repo, token, baseURL } = event;
   const targetNumber = prNumber || issueNumber!;
@@ -387,7 +387,7 @@ export async function submitReview(
 
   console.log("Response compiled. Submitting feedback back to GitHub...");
   console.log(
-    `submitReview: isPullRequest=${isPullRequest} prNumber=${prNumber} issueNumber=${issueNumber} repo=${repo}`
+    `submitReview: isPullRequest=${isPullRequest} prNumber=${prNumber} issueNumber=${issueNumber} repo=${repo}`,
   );
 
   if (isPullRequest && prNumber) {
@@ -398,7 +398,7 @@ export async function submitReview(
           ? "APPROVE"
           : "COMMENT";
       console.log(
-        `submitReview: calling submitPrReview (event=${eventType}, comments=${commentsArray.length})`
+        `submitReview: calling submitPrReview (event=${eventType}, comments=${commentsArray.length})`,
       );
       await submitPrReview(
         repo,
@@ -406,12 +406,12 @@ export async function submitReview(
         prBody,
         eventType,
         commentsArray,
-        token
+        token,
       );
     } catch (reviewError) {
       console.warn(
         "Failed to submit PR review, falling back to standard issue comment:",
-        reviewError
+        reviewError,
       );
       await postIssueComment(repo, prNumber, prBody, token);
     }
@@ -468,7 +468,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
       filePath: z
         .string()
         .describe(
-          "The relative path of the file to read (e.g. 'src/engine.py')."
+          "The relative path of the file to read (e.g. 'src/engine.py').",
         ),
     }),
     outputSchema: z.object({
@@ -478,7 +478,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
       const resolvedPath = resolve(REPO_ROOT, filePath);
       if (!isInsideRepo(resolvedPath)) {
         throw new Error(
-          `Permission denied: Cannot read file outside repository workspace: ${filePath}`
+          `Permission denied: Cannot read file outside repository workspace: ${filePath}`,
         );
       }
       // Local checkout is the base branch; PR-only files live on the PR head.
@@ -494,12 +494,12 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
               token,
               filePath,
               headSha,
-              prFilePaths
+              prFilePaths,
             );
             return { content };
           }
           throw new Error(
-            `Permission denied: '${filePath}' is not part of PR #${prNumber} and cannot be read from the PR head.`
+            `Permission denied: '${filePath}' is not part of PR #${prNumber} and cannot be read from the PR head.`,
           );
         }
         throw err;
@@ -515,7 +515,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
       dirPath: z
         .string()
         .describe(
-          "The relative path of the directory to list (e.g. 'src/core'). Use '.' for root."
+          "The relative path of the directory to list (e.g. 'src/core'). Use '.' for root.",
         ),
     }),
     outputSchema: z.object({
@@ -525,7 +525,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
       const resolvedPath = resolve(REPO_ROOT, dirPath);
       if (!isInsideRepo(resolvedPath)) {
         throw new Error(
-          `Permission denied: Cannot list directory outside repository workspace: ${dirPath}`
+          `Permission denied: Cannot list directory outside repository workspace: ${dirPath}`,
         );
       }
       const files = readdirSync(resolvedPath);
@@ -555,7 +555,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
     execute: async ({ issueId }: { issueId: string }) => {
       if (!linearApiKey) {
         throw new Error(
-          "A Linear API key is not configured in the environment."
+          "A Linear API key is not configured in the environment.",
         );
       }
       if (!LINEAR_ISSUE_ID_RE.test(issueId)) {
@@ -618,7 +618,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
           cwd: REPO_ROOT,
           encoding: "utf-8",
           maxBuffer: 1024 * 1024 * 5,
-        }
+        },
       );
       const result = spawnSync("git", ["grep", "--", query], {
         cwd: REPO_ROOT,
@@ -633,7 +633,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
       }
       if (result.status !== 0) {
         throw new Error(
-          `grep failed: ${(result.stderr || "").trim() || `exit ${result.status}`}`
+          `grep failed: ${(result.stderr || "").trim() || `exit ${result.status}`}`,
         );
       }
       return { results: (result.stdout || "").substring(0, 15000) };
@@ -669,7 +669,7 @@ export function truncateToolResult(content: string): string {
   if (content.length <= MAX_TOOL_RESULT_CHARS) return content;
   return `${content.slice(
     0,
-    MAX_TOOL_RESULT_CHARS
+    MAX_TOOL_RESULT_CHARS,
   )}\n...[tool result truncated: ${content.length} chars, showing first ${MAX_TOOL_RESULT_CHARS}]`;
 }
 
@@ -694,7 +694,7 @@ function extractChatCompletionText(response: any): string {
   if (Array.isArray(content)) {
     return content
       .filter(
-        (item: any) => item?.type === "text" && typeof item.text === "string"
+        (item: any) => item?.type === "text" && typeof item.text === "string",
       )
       .map((item: any) => item.text)
       .join("");
@@ -730,7 +730,7 @@ function extractChatCompletionToolCalls(response: any): ChatToolCall[] {
   return (response?.choices?.[0]?.message?.tool_calls || [])
     .filter(
       (item: any) =>
-        item?.type === "function" && typeof item?.function?.name === "string"
+        item?.type === "function" && typeof item?.function?.name === "string",
     )
     .map((item: any, index: number) => ({
       id: typeof item.id === "string" ? item.id : `call_${index}`,
@@ -741,7 +741,7 @@ function extractChatCompletionToolCalls(response: any): ChatToolCall[] {
 
 async function invokeTool(tools: any[], call: ChatToolCall): Promise<unknown> {
   const toolDefinition = tools.find(
-    (candidate) => (candidate.function || candidate).name === call.name
+    (candidate) => (candidate.function || candidate).name === call.name,
   );
   const execute =
     toolDefinition && (toolDefinition.function || toolDefinition).execute;
@@ -755,7 +755,7 @@ async function invokeTool(tools: any[], call: ChatToolCall): Promise<unknown> {
       : call.arguments;
   console.log(
     `🔧 [Tool Call] Using tool "${call.name}" with arguments:`,
-    JSON.stringify(args)
+    JSON.stringify(args),
   );
   return execute(args);
 }
@@ -763,7 +763,7 @@ async function invokeTool(tools: any[], call: ChatToolCall): Promise<unknown> {
 async function callChatCompletionsApi(
   event: EventInfo,
   messages: ChatMessage[],
-  tools: any[]
+  tools: any[],
 ): Promise<any> {
   const response = await fetch(chatCompletionsUrl(event.baseURL), {
     method: "POST",
@@ -786,10 +786,10 @@ async function callChatCompletionsApi(
   // so every review shows which provider/model actually answered.
   const providerInfo = response.headers.get("X-Provider-Info");
   const providerErrors = Array.from({ length: 8 }, (_, i) =>
-    response.headers.get(`X-Provider-Error-${i}`)
+    response.headers.get(`X-Provider-Error-${i}`),
   ).filter((e): e is string => !!e);
   console.log(
-    `[Provider] ${providerInfo ?? "unknown"}${providerErrors.length ? ` | errors: ${providerErrors.join(" | ")}` : ""}`
+    `[Provider] ${providerInfo ?? "unknown"}${providerErrors.length ? ` | errors: ${providerErrors.join(" | ")}` : ""}`,
   );
 
   if (!response.ok) {
@@ -818,7 +818,7 @@ export async function runAgent(
   systemPrompt: string,
   tools: any[],
   userMessage: string,
-  event: EventInfo
+  event: EventInfo,
 ): Promise<string> {
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= MAX_AGENT_RETRIES; attempt++) {
@@ -828,40 +828,40 @@ export async function runAgent(
     ];
 
     try {
-        for (let step = 1; step <= MAX_AGENT_STEPS; step++) {
-          console.log(
-            `🤖 [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS})`
+      for (let step = 1; step <= MAX_AGENT_STEPS; step++) {
+        console.log(
+          `🤖 [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS})`,
+        );
+        const isLastStep = step === MAX_AGENT_STEPS;
+        if (isLastStep) {
+          messages.push({
+            role: "user",
+            content:
+              "Step budget reached. Do not invoke any tools. Synthesize all findings collected so far and return the final JSON review object immediately.",
+          });
+        }
+        const stepTools = isLastStep ? [] : tools;
+        // Free models (qwen3.8-max-free) occasionally return HTTP 200 with an
+        // empty reply (no text, no tool calls) on long tool-heavy contexts.
+        // Retry the same request a few times before giving up — a fresh draw
+        // usually yields a real answer, and losing the whole agent run over a
+        // transient empty response wastes the review.
+        let replyText = "";
+        let toolCalls: ChatToolCall[] = [];
+        for (let empty = 0; empty <= EMPTY_RESPONSE_RETRIES; empty++) {
+          const response = await callChatCompletionsApi(
+            event,
+            messages,
+            stepTools,
           );
-          const isLastStep = step === MAX_AGENT_STEPS;
-          if (isLastStep) {
-            messages.push({
-              role: "user",
-              content:
-                "Step budget reached. Do not invoke any tools. Synthesize all findings collected so far and return the final JSON review object immediately.",
-            });
-          }
-          const stepTools = isLastStep ? [] : tools;
-          // Free models (qwen3.8-max-free) occasionally return HTTP 200 with an
-          // empty reply (no text, no tool calls) on long tool-heavy contexts.
-          // Retry the same request a few times before giving up — a fresh draw
-          // usually yields a real answer, and losing the whole agent run over a
-          // transient empty response wastes the review.
-          let replyText = "";
-          let toolCalls: ChatToolCall[] = [];
-          for (let empty = 0; empty <= EMPTY_RESPONSE_RETRIES; empty++) {
-            const response = await callChatCompletionsApi(
-              event,
-              messages,
-              stepTools
-            );
-            replyText = extractChatCompletionText(response);
-            toolCalls = extractChatCompletionToolCalls(response);
-            // Same empty-reply contract as the Worker router (chat-completions.ts).
-            if (!isEmptyChatCompletion(response)) break;
-            console.warn(
-              `⚠️ [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS}) model returned an empty reply; retrying (${empty + 1}/${EMPTY_RESPONSE_RETRIES})`
-            );
-          }
+          replyText = extractChatCompletionText(response);
+          toolCalls = extractChatCompletionToolCalls(response);
+          // Same empty-reply contract as the Worker router (chat-completions.ts).
+          if (!isEmptyChatCompletion(response)) break;
+          console.warn(
+            `⚠️ [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS}) model returned an empty reply; retrying (${empty + 1}/${EMPTY_RESPONSE_RETRIES})`,
+          );
+        }
 
         if (toolCalls.length === 0) {
           if (!replyText.trim()) throw new Error("Empty response from model");

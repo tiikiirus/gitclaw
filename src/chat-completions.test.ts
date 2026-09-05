@@ -16,7 +16,7 @@ describe("isEmptyChatCompletion — shared router/client contract", () => {
     expect(
       isEmptyChatCompletion({
         choices: [{ message: { content: "review ok" } }],
-      })
+      }),
     ).toBe(false);
   });
 
@@ -24,7 +24,7 @@ describe("isEmptyChatCompletion — shared router/client contract", () => {
     expect(
       isEmptyChatCompletion({
         choices: [{ message: { content: "   " } }],
-      })
+      }),
     ).toBe(true);
   });
 
@@ -32,7 +32,7 @@ describe("isEmptyChatCompletion — shared router/client contract", () => {
     expect(
       isEmptyChatCompletion({
         choices: [{ message: { content: null } }],
-      })
+      }),
     ).toBe(true);
   });
 
@@ -49,7 +49,7 @@ describe("isEmptyChatCompletion — shared router/client contract", () => {
             },
           },
         ],
-      })
+      }),
     ).toBe(false);
   });
 
@@ -66,16 +66,16 @@ describe("isEmptyChatCompletion — shared router/client contract", () => {
             },
           },
         ],
-      })
+      }),
     ).toBe(false);
   });
 
   test("delta variant is honoured (streaming-shaped payload)", () => {
     expect(
-      isEmptyChatCompletion({ choices: [{ delta: { content: "" } }] })
+      isEmptyChatCompletion({ choices: [{ delta: { content: "" } }] }),
     ).toBe(true);
     expect(
-      isEmptyChatCompletion({ choices: [{ delta: { content: "ok" } }] })
+      isEmptyChatCompletion({ choices: [{ delta: { content: "ok" } }] }),
     ).toBe(false);
   });
 

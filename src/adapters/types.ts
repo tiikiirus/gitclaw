@@ -40,7 +40,7 @@ export interface ProviderAdapter {
     modelId: string,
     originalBody: Record<string, unknown>,
     env: Record<string, unknown>,
-    key?: string
+    key?: string,
   ): RequestConfig | null;
 
   /** Check if provider response is a success */

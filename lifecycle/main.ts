@@ -142,7 +142,7 @@ ${staticContext}`;
 }
 
 function buildUserMessage(
-  event: Awaited<ReturnType<typeof parseEvent>>
+  event: Awaited<ReturnType<typeof parseEvent>>,
 ): string {
   if (event.isPullRequest && event.prDiff) {
     return `Here is the Pull Request Diff to analyze:
@@ -193,7 +193,7 @@ async function main() {
     };
     await submitReview(event, errorResult, agentName, agentMarker);
     console.warn(
-      "Agent error posted as review. Exiting gracefully (0) so the review stays visible."
+      "Agent error posted as review. Exiting gracefully (0) so the review stays visible.",
     );
     return;
   }

@@ -73,7 +73,7 @@ export class ModelRegistry {
   /** Get sorted model list for a role, best first */
   async getModelsForRole(
     role: Role,
-    env: Record<string, unknown>
+    env: Record<string, unknown>,
   ): Promise<ModelInfo[]> {
     const allModels = await this.getModels(env);
     const scoreKey =
@@ -113,7 +113,7 @@ export class ModelRegistry {
   /** Get vision-capable models sorted by role score */
   async getVisionModelsForRole(
     role: Role,
-    env: Record<string, unknown>
+    env: Record<string, unknown>,
   ): Promise<ModelInfo[]> {
     const all = await this.getModelsForRole(role, env);
     return all.filter((m) => m.supportsVision);
@@ -131,7 +131,7 @@ export class ModelRegistry {
   }
 
   getProviderConfiguration(
-    env: Record<string, unknown>
+    env: Record<string, unknown>,
   ): Array<{ id: string; configured: boolean }> {
     return this.adapters
       .filter((adapter) => adapter.enabled)

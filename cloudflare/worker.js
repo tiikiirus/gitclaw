@@ -17,11 +17,7 @@ class GroqAdapter {
   name = "groq";
   enabled = true;
   getKeys(env) {
-    return [
-      env.GROQ_API_KEY,
-      env.GROQ_API_KEY_BACKUP,
-      env.GROQ_API_KEYS
-    ].filter((value) => typeof value === "string").flatMap((value) => value.split(",")).map((key) => key.trim()).filter(Boolean);
+    return [env.GROQ_API_KEY, env.GROQ_API_KEY_BACKUP, env.GROQ_API_KEYS].filter((value) => typeof value === "string").flatMap((value) => value.split(",")).map((key) => key.trim()).filter(Boolean);
   }
   async fetchModels(env) {
     if (this.getKeys(env).length === 0)
@@ -224,7 +220,11 @@ var OPENROUTER_MODEL_SCORES = {
   "openrouter/free": { planning: 82, coding: 85, review: 88 },
   "z-ai/glm-5.2:free": { planning: 82, coding: 86, review: 88 },
   "minimax/minimax-m3:free": { planning: 80, coding: 84, review: 85 },
-  "nvidia/nemotron-3-ultra-550b-a55b:free": { planning: 85, coding: 86, review: 89 },
+  "nvidia/nemotron-3-ultra-550b-a55b:free": {
+    planning: 85,
+    coding: 86,
+    review: 89
+  },
   "poolside/laguna-s-2.1:free": { planning: 84, coding: 88, review: 88 },
   "cohere/north-mini-code:free": { planning: 78, coding: 86, review: 84 }
 };
@@ -508,7 +508,13 @@ function isEmptyChatCompletion(response) {
 }
 
 // src/router.ts
-var PROVIDER_ORDER = ["tokenrouter", "groq", "openrouter", "opencode", "mistral"];
+var PROVIDER_ORDER = [
+  "tokenrouter",
+  "groq",
+  "openrouter",
+  "opencode",
+  "mistral"
+];
 var failedKeysCooldown = new Map;
 var providerRateLimitedUntil = new Map;
 var CB_COOLDOWN_MS = 15000;
