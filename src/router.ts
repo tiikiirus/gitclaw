@@ -10,7 +10,7 @@ export interface RouterResult {
   errors: string[];
 }
 
-const PROVIDER_ORDER = ["tokenrouter", "opencode", "mistral"];
+const PROVIDER_ORDER = ["tokenrouter", "groq", "openrouter", "opencode", "mistral"];
 
 // In-memory circuit breaker to prevent blindly retrying dead/rate-limited keys.
 // Maps a provider+model+key tuple to the timestamp when it last failed.

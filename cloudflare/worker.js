@@ -1,4 +1,66 @@
 // @bun
+// src/adapters/groq.ts
+var DEFAULT_GROQ_BASE_URL = "https://api.groq.com/openai/v1";
+var DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
+var GROQ_MODEL_SCORES = {
+  "llama-3.1-8b-instant": { planning: 82, coding: 85, review: 88 },
+  "llama-3.1-70b-versatile": { planning: 88, coding: 86, review: 90 },
+  "mixtral-8x7b-32768": { planning: 80, coding: 82, review: 85 },
+  "qwen2.5-32b": { planning: 84, coding: 86, review: 87 },
+  "gemma2-9b-it": { planning: 78, coding: 80, review: 82 }
+};
+function isGroqModel(modelId) {
+  return modelId in GROQ_MODEL_SCORES;
+}
+
+class GroqAdapter {
+  id = "groq";
+  name = "groq";
+  enabled = true;
+  getKeys(env) {
+    return [
+      env.GROQ_API_KEY,
+      env.GROQ_API_KEY_BACKUP,
+      env.GROQ_API_KEYS
+    ].filter((value) => typeof value === "string").flatMap((value) => value.split(",")).map((key) => key.trim()).filter(Boolean);
+  }
+  async fetchModels(env) {
+    if (this.getKeys(env).length === 0)
+      return [];
+    return Object.entries(GROQ_MODEL_SCORES).map(([modelId, scores]) => ({
+      id: modelId,
+      providerId: this.id,
+      providerName: modelId,
+      pricing: { prompt: 0, completion: 0 },
+      supportsVision: false,
+      contextLength: 131072,
+      scores
+    }));
+  }
+  prepareRequest(modelId, originalBody, env, key) {
+    const keys = this.getKeys(env);
+    if (keys.length === 0)
+      return null;
+    const configuredModel = (env.GROQ_MODEL || "").trim() || DEFAULT_GROQ_MODEL;
+    const requestedModel = !modelId || modelId === "auto" ? configuredModel : modelId;
+    if (!isGroqModel(requestedModel))
+      return null;
+    const baseUrl = (env.GROQ_BASE_URL || DEFAULT_GROQ_BASE_URL).trim().replace(/\/+$/, "");
+    const chatBase = baseUrl.toLowerCase().endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
+    return {
+      url: `${chatBase}/chat/completions`,
+      headers: {
+        Authorization: `Bearer ${key || keys[0]}`,
+        "Content-Type": "application/json"
+      },
+      body: { ...originalBody, model: requestedModel }
+    };
+  }
+  isSuccess(response) {
+    return response.ok;
+  }
+}
+
 // src/adapters/mistral.ts
 var DEFAULT_MISTRAL_BASE_URL = "https://api.mistral.ai/v1";
 var DEFAULT_MISTRAL_MODEL = "mistral-small-latest";
@@ -156,6 +218,70 @@ class OpenCodeAdapter {
   }
 }
 
+// src/adapters/openrouter.ts
+var DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+var DEFAULT_OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct:free";
+var OPENROUTER_MODEL_SCORES = {
+  "meta-llama/llama-3.1-8b-instruct:free": { planning: 80, coding: 82, review: 85 },
+  "qwen/qwen-2.5-7b-instruct:free": { planning: 78, coding: 84, review: 83 },
+  "deepseek/deepseek-r1:free": { planning: 84, coding: 87, review: 86 },
+  "google/gemma-2-9b-it:free": { planning: 76, coding: 80, review: 81 },
+  "mistralai/mistral-7b-instruct:free": { planning: 74, coding: 78, review: 80 }
+};
+function isOpenRouterModel(modelId) {
+  return modelId in OPENROUTER_MODEL_SCORES;
+}
+
+class OpenRouterAdapter {
+  id = "openrouter";
+  name = "openrouter";
+  enabled = true;
+  getKeys(env) {
+    return [
+      env.OPENROUTER_API_KEY,
+      env.OPENROUTER_API_KEY_BACKUP,
+      env.OPENROUTER_API_KEYS
+    ].filter((value) => typeof value === "string").flatMap((value) => value.split(",")).map((key) => key.trim()).filter(Boolean);
+  }
+  async fetchModels(env) {
+    if (this.getKeys(env).length === 0)
+      return [];
+    return Object.entries(OPENROUTER_MODEL_SCORES).map(([modelId, scores]) => ({
+      id: modelId,
+      providerId: this.id,
+      providerName: modelId,
+      pricing: { prompt: 0, completion: 0 },
+      supportsVision: false,
+      contextLength: 131072,
+      scores
+    }));
+  }
+  prepareRequest(modelId, originalBody, env, key) {
+    const keys = this.getKeys(env);
+    if (keys.length === 0)
+      return null;
+    const configuredModel = (env.OPENROUTER_MODEL || "").trim() || DEFAULT_OPENROUTER_MODEL;
+    const requestedModel = !modelId || modelId === "auto" ? configuredModel : modelId;
+    if (!isOpenRouterModel(requestedModel))
+      return null;
+    const baseUrl = (env.OPENROUTER_BASE_URL || DEFAULT_OPENROUTER_BASE_URL).trim().replace(/\/+$/, "");
+    const chatBase = baseUrl.toLowerCase().endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
+    return {
+      url: `${chatBase}/chat/completions`,
+      headers: {
+        Authorization: `Bearer ${key || keys[0]}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/tiikiirus/gitclaw",
+        "X-Title": "Gitclaw AI Reviewer"
+      },
+      body: { ...originalBody, model: requestedModel }
+    };
+  }
+  isSuccess(response) {
+    return response.ok;
+  }
+}
+
 // src/adapters/tokenrouter.ts
 var DEFAULT_TOKENROUTER_MODEL = "z-ai/glm-5.3-free";
 var DEFAULT_TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1";
@@ -214,13 +340,17 @@ class TokenRouterAdapter {
 // src/adapters/registry.ts
 var PROVIDER_PRIORITY = {
   tokenrouter: 0,
-  opencode: 1,
-  mistral: 2
+  groq: 1,
+  openrouter: 2,
+  opencode: 3,
+  mistral: 4
 };
 
 class ModelRegistry {
   adapters = [
     new TokenRouterAdapter,
+    new GroqAdapter,
+    new OpenRouterAdapter,
     new OpenCodeAdapter,
     new MistralAdapter
   ];
@@ -378,7 +508,7 @@ function isEmptyChatCompletion(response) {
 }
 
 // src/router.ts
-var PROVIDER_ORDER = ["tokenrouter", "opencode", "mistral"];
+var PROVIDER_ORDER = ["tokenrouter", "groq", "openrouter", "opencode", "mistral"];
 var failedKeysCooldown = new Map;
 var providerRateLimitedUntil = new Map;
 var CB_COOLDOWN_MS = 15000;

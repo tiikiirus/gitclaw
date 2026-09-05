@@ -1,6 +1,8 @@
 import { ModelInfo } from "./types";
+import { GroqAdapter } from "./groq";
 import { MistralAdapter } from "./mistral";
 import { OpenCodeAdapter } from "./opencode";
+import { OpenRouterAdapter } from "./openrouter";
 import { TokenRouterAdapter } from "./tokenrouter";
 
 export type Role = "planner" | "coder" | "reviewer" | "default";
@@ -8,13 +10,17 @@ export type Role = "planner" | "coder" | "reviewer" | "default";
 /** Provider priority: lower number = tried first */
 const PROVIDER_PRIORITY: Record<string, number> = {
   tokenrouter: 0,
-  opencode: 1,
-  mistral: 2,
+  groq: 1,
+  openrouter: 2,
+  opencode: 3,
+  mistral: 4,
 };
 
 export class ModelRegistry {
   private adapters = [
     new TokenRouterAdapter(),
+    new GroqAdapter(),
+    new OpenRouterAdapter(),
     new OpenCodeAdapter(),
     new MistralAdapter(),
   ];
