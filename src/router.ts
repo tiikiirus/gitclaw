@@ -388,13 +388,13 @@ export class CascadeRouter {
 
   private _getTimeout(adapterId: string, env: Record<string, unknown>): number {
     // Per-provider upstream fetch timeout (env override:
-    // TOKENROUTER_TIMEOUT_MS or OPENCODE_TIMEOUT_MS). The default 60s covers TTFB
+    // TOKENROUTER_TIMEOUT_MS or OPENCODE_TIMEOUT_MS). The default 90s covers TTFB
     // for large-context reviews (356k prompt); the body is consumed lazily by the SSE converter after
     // fetch() resolves, so this is a connect/first-byte budget, not a total
     // stream budget. Previously 30s caused "The operation was aborted" on large diffs.
     const key = `${adapterId.toUpperCase()}_TIMEOUT_MS`;
     const val = parseInt(env[key] as string, 10);
-    return isNaN(val) ? 60000 : Math.min(120_000, Math.max(1_000, val));
+    return isNaN(val) ? 90000 : Math.min(120_000, Math.max(1_000, val));
   }
 
   private _list(val: unknown): string[] {
