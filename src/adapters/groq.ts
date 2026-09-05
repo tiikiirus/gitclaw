@@ -1,16 +1,15 @@
 import { ModelInfo, ProviderAdapter, RequestConfig } from "./types";
 
 const DEFAULT_GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-const DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
+const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
 
 // Groq free tier models - fast LPU inference, 14k req/day, 30 req/min per model
 // Scores tuned for review (critical findings, not generic praise)
 const GROQ_MODEL_SCORES: Record<string, { planning: number; coding: number; review: number }> = {
+  "llama-3.3-70b-versatile": { planning: 88, coding: 88, review: 90 },
+  "openai/gpt-oss-120b": { planning: 86, coding: 88, review: 88 },
+  "openai/gpt-oss-20b": { planning: 80, coding: 82, review: 82 },
   "llama-3.1-8b-instant": { planning: 82, coding: 85, review: 88 },
-  "llama-3.1-70b-versatile": { planning: 88, coding: 86, review: 90 },
-  "mixtral-8x7b-32768": { planning: 80, coding: 82, review: 85 },
-  "qwen2.5-32b": { planning: 84, coding: 86, review: 87 },
-  "gemma2-9b-it": { planning: 78, coding: 80, review: 82 },
 };
 
 function isGroqModel(modelId: string): boolean {

@@ -1,13 +1,12 @@
 // @bun
 // src/adapters/groq.ts
 var DEFAULT_GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-var DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
+var DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
 var GROQ_MODEL_SCORES = {
-  "llama-3.1-8b-instant": { planning: 82, coding: 85, review: 88 },
-  "llama-3.1-70b-versatile": { planning: 88, coding: 86, review: 90 },
-  "mixtral-8x7b-32768": { planning: 80, coding: 82, review: 85 },
-  "qwen2.5-32b": { planning: 84, coding: 86, review: 87 },
-  "gemma2-9b-it": { planning: 78, coding: 80, review: 82 }
+  "llama-3.3-70b-versatile": { planning: 88, coding: 88, review: 90 },
+  "openai/gpt-oss-120b": { planning: 86, coding: 88, review: 88 },
+  "openai/gpt-oss-20b": { planning: 80, coding: 82, review: 82 },
+  "llama-3.1-8b-instant": { planning: 82, coding: 85, review: 88 }
 };
 function isGroqModel(modelId) {
   return modelId in GROQ_MODEL_SCORES;
@@ -220,13 +219,14 @@ class OpenCodeAdapter {
 
 // src/adapters/openrouter.ts
 var DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-var DEFAULT_OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct:free";
+var DEFAULT_OPENROUTER_MODEL = "openrouter/free";
 var OPENROUTER_MODEL_SCORES = {
-  "meta-llama/llama-3.1-8b-instruct:free": { planning: 80, coding: 82, review: 85 },
-  "qwen/qwen-2.5-7b-instruct:free": { planning: 78, coding: 84, review: 83 },
-  "deepseek/deepseek-r1:free": { planning: 84, coding: 87, review: 86 },
-  "google/gemma-2-9b-it:free": { planning: 76, coding: 80, review: 81 },
-  "mistralai/mistral-7b-instruct:free": { planning: 74, coding: 78, review: 80 }
+  "openrouter/free": { planning: 82, coding: 85, review: 88 },
+  "z-ai/glm-5.2:free": { planning: 82, coding: 86, review: 88 },
+  "minimax/minimax-m3:free": { planning: 80, coding: 84, review: 85 },
+  "nvidia/nemotron-3-ultra-550b-a55b:free": { planning: 85, coding: 86, review: 89 },
+  "poolside/laguna-s-2.1:free": { planning: 84, coding: 88, review: 88 },
+  "cohere/north-mini-code:free": { planning: 78, coding: 86, review: 84 }
 };
 function isOpenRouterModel(modelId) {
   return modelId in OPENROUTER_MODEL_SCORES;
