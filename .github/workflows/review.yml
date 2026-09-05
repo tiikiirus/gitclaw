@@ -106,6 +106,25 @@ jobs:
           path: reviewed
           persist-credentials: false
 
+      - name: Ensure jq (self-hosted Windows runner)
+        run: |
+          set -euo pipefail
+          if ! command -v jq >/dev/null 2>&1; then
+            echo "jq not found on runner, installing..."
+            if command -v choco >/dev/null 2>&1; then
+              choco install jq -y --no-progress || echo "choco jq install failed"
+            elif command -v winget >/dev/null 2>&1; then
+              winget install --id jqlang.jq -e --accept-package-agreements --accept-source-agreements || echo "winget jq install failed"
+            else
+              echo "No choco/winget found to install jq"
+            fi
+          fi
+          if command -v jq >/dev/null 2>&1; then
+            jq --version
+          else
+            echo "::warning::jq still not available - dedup will use python fallback"
+          fi
+
       - name: Check for an existing review on this SHA
         id: dedup
         env:
@@ -125,8 +144,13 @@ jobs:
             exit 0
           fi
           reviews=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews?per_page=20" 2>/dev/null || echo '[]')
-          already=$(printf '%s' "$reviews" | jq -r --arg sha "$HEAD_SHA" --arg marker "$AGENT_MARKER" \
-            '[.[] | select(.commit_id == $sha and .user.login == "github-actions[bot]" and ((.body // "") | contains($marker)))] | length')
+          if command -v jq >/dev/null 2>&1; then
+            already=$(printf '%s' "$reviews" | jq -r --arg sha "$HEAD_SHA" --arg marker "$AGENT_MARKER" \
+              '[.[] | select(.commit_id == $sha and .user.login == "github-actions[bot]" and ((.body // "") | contains($marker)))] | length' 2>/dev/null || echo 0)
+          else
+            # python fallback for Windows self-hosted runners without jq (NetworkService PATH)
+            already=$(printf '%s' "$reviews" | python -c "import sys,json,os; data=json.load(sys.stdin); sha=os.environ.get('HEAD_SHA',''); marker=os.environ.get('AGENT_MARKER',''); print(sum(1 for r in data if r.get('commit_id')==sha and r.get('user',{}).get('login')=='github-actions[bot]' and marker in (r.get('body') or '')))" 2>/dev/null || echo 0)
+          fi
           echo "skip=$([ "${already:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: Run ${{ inputs.agent_name }}
