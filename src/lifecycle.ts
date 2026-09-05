@@ -652,7 +652,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
 
 // --- Non-streaming agent runner ---
 const MAX_AGENT_RETRIES = 3;
-const MAX_AGENT_STEPS = 10;
+const MAX_AGENT_STEPS = 15;
 const EMPTY_RESPONSE_RETRIES = 2;
 const AGENT_TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS) || 300_000;
 
@@ -828,27 +828,40 @@ export async function runAgent(
     ];
 
     try {
-      for (let step = 1; step <= MAX_AGENT_STEPS; step++) {
-        console.log(
-          `🤖 [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS})`
-        );
-        // Free models (qwen3.8-max-free) occasionally return HTTP 200 with an
-        // empty reply (no text, no tool calls) on long tool-heavy contexts.
-        // Retry the same request a few times before giving up — a fresh draw
-        // usually yields a real answer, and losing the whole agent run over a
-        // transient empty response wastes the review.
-        let replyText = "";
-        let toolCalls: ChatToolCall[] = [];
-        for (let empty = 0; empty <= EMPTY_RESPONSE_RETRIES; empty++) {
-          const response = await callChatCompletionsApi(event, messages, tools);
-          replyText = extractChatCompletionText(response);
-          toolCalls = extractChatCompletionToolCalls(response);
-          // Same empty-reply contract as the Worker router (chat-completions.ts).
-          if (!isEmptyChatCompletion(response)) break;
-          console.warn(
-            `⚠️ [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS}) model returned an empty reply; retrying (${empty + 1}/${EMPTY_RESPONSE_RETRIES})`
+        for (let step = 1; step <= MAX_AGENT_STEPS; step++) {
+          console.log(
+            `🤖 [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS})`
           );
-        }
+          const isLastStep = step === MAX_AGENT_STEPS;
+          if (isLastStep) {
+            messages.push({
+              role: "user",
+              content:
+                "Step budget reached. Do not invoke any tools. Synthesize all findings collected so far and return the final JSON review object immediately.",
+            });
+          }
+          const stepTools = isLastStep ? [] : tools;
+          // Free models (qwen3.8-max-free) occasionally return HTTP 200 with an
+          // empty reply (no text, no tool calls) on long tool-heavy contexts.
+          // Retry the same request a few times before giving up — a fresh draw
+          // usually yields a real answer, and losing the whole agent run over a
+          // transient empty response wastes the review.
+          let replyText = "";
+          let toolCalls: ChatToolCall[] = [];
+          for (let empty = 0; empty <= EMPTY_RESPONSE_RETRIES; empty++) {
+            const response = await callChatCompletionsApi(
+              event,
+              messages,
+              stepTools
+            );
+            replyText = extractChatCompletionText(response);
+            toolCalls = extractChatCompletionToolCalls(response);
+            // Same empty-reply contract as the Worker router (chat-completions.ts).
+            if (!isEmptyChatCompletion(response)) break;
+            console.warn(
+              `⚠️ [Agent request] (attempt ${attempt}/${MAX_AGENT_RETRIES}, step ${step}/${MAX_AGENT_STEPS}) model returned an empty reply; retrying (${empty + 1}/${EMPTY_RESPONSE_RETRIES})`
+            );
+          }
 
         if (toolCalls.length === 0) {
           if (!replyText.trim()) throw new Error("Empty response from model");
