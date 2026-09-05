@@ -583,7 +583,7 @@ class CascadeRouter {
   _getTimeout(adapterId, env) {
     const key = `${adapterId.toUpperCase()}_TIMEOUT_MS`;
     const val = parseInt(env[key], 10);
-    return isNaN(val) ? 60000 : Math.min(120000, Math.max(1000, val));
+    return isNaN(val) ? 90000 : Math.min(120000, Math.max(1000, val));
   }
   _list(val) {
     if (typeof val !== "string")
