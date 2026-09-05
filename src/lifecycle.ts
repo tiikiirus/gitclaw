@@ -663,7 +663,7 @@ const AGENT_TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS) || 300_000;
 // tool result so the conversation stays within every provider's window; the
 // user message already embeds a diff excerpt, so the tail is a bonus, not
 // the primary source.
-const MAX_TOOL_RESULT_CHARS = 30_000;
+const MAX_TOOL_RESULT_CHARS = 20_000;
 
 export function truncateToolResult(content: string): string {
   if (content.length <= MAX_TOOL_RESULT_CHARS) return content;

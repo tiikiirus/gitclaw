@@ -22,10 +22,10 @@ OPENCODE_TIMEOUT_MS = "90000"
 MISTRAL_BASE_URL = "https://api.mistral.ai/v1"
 MISTRAL_MODEL = "mistral-small-latest"
 MISTRAL_TIMEOUT_MS = "90000"
-MODEL_DEFAULT = "openrouter/free,z-ai/glm-5.2:free,openai/gpt-oss-120b,z-ai/glm-5.3-free,mistral-small-latest"
-MODEL_PLANNER = "openrouter/free,openai/gpt-oss-120b,deepseek-v4-flash-free,mistral-small-latest"
-MODEL_CODER = "openrouter/free,openai/gpt-oss-120b,deepseek-v4-flash-free,mistral-small-latest"
-MODEL_REVIEWER = "openrouter/free,z-ai/glm-5.2:free,minimax/minimax-m3:free,openai/gpt-oss-120b,z-ai/glm-5.3-free,deepseek-v4-flash-free,laguna-s-2.1-free,mistral-small-latest"
+MODEL_DEFAULT = "openai/gpt-oss-120b,openai/gpt-oss-20b,openrouter/free,z-ai/glm-5.2:free,z-ai/glm-5.3-free,mistral-small-latest"
+MODEL_PLANNER = "openai/gpt-oss-120b,openrouter/free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_CODER = "openai/gpt-oss-120b,openrouter/free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_REVIEWER = "openai/gpt-oss-120b,openai/gpt-oss-20b,openrouter/free,z-ai/glm-5.2:free,minimax/minimax-m3:free,z-ai/glm-5.3-free,deepseek-v4-flash-free,laguna-s-2.1-free,mistral-small-latest"
 
 # Secrets are intentionally not stored here.
 # Configure runtime secrets in Cloudflare Worker settings or GitHub Actions secrets:

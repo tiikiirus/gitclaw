@@ -147,7 +147,7 @@ function buildUserMessage(
   if (event.isPullRequest && event.prDiff) {
     return `Here is the Pull Request Diff to analyze:
 \`\`\`diff
-${event.prDiff.substring(0, 35000)}
+${event.prDiff.substring(0, 24000)}
 \`\`\`
 
 Here is the user's request / event data:
