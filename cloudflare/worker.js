@@ -1,5 +1,5 @@
 // @bun
-// packages/gitclaw-runtime/src/adapters/mistral.ts
+// src/adapters/mistral.ts
 var DEFAULT_MISTRAL_BASE_URL = "https://api.mistral.ai/v1";
 var DEFAULT_MISTRAL_MODEL = "mistral-small-latest";
 var MISTRAL_MODEL_SCORES = {
@@ -67,7 +67,7 @@ class MistralAdapter {
   }
 }
 
-// packages/gitclaw-runtime/src/adapters/opencode.ts
+// src/adapters/opencode.ts
 var DEFAULT_OPENCODE_BASE_URL = "https://opencode.ai/zen/v1";
 var DEFAULT_OPENCODE_MODEL = "hy3-free";
 var FREE_MODEL_SCORES = {
@@ -156,7 +156,7 @@ class OpenCodeAdapter {
   }
 }
 
-// packages/gitclaw-runtime/src/adapters/tokenrouter.ts
+// src/adapters/tokenrouter.ts
 var DEFAULT_TOKENROUTER_MODEL = "z-ai/glm-5.3-free";
 var DEFAULT_TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1";
 
@@ -211,7 +211,7 @@ class TokenRouterAdapter {
   }
 }
 
-// packages/gitclaw-runtime/src/adapters/registry.ts
+// src/adapters/registry.ts
 var PROVIDER_PRIORITY = {
   tokenrouter: 0,
   opencode: 1,
@@ -308,7 +308,7 @@ function getRegistry() {
   return _registry;
 }
 
-// packages/gitclaw-runtime/src/adapters/types.ts
+// src/adapters/types.ts
 var SHORT_TO_FULL = {
   "claude-opus-4-8": "anthropic/claude-opus-4-8",
   "claude-opus-4-1": "anthropic/claude-opus-4-1",
@@ -345,7 +345,7 @@ function expandModelName(name) {
   return name;
 }
 
-// packages/gitclaw-runtime/src/chat-completions.ts
+// src/chat-completions.ts
 function messageText(message) {
   if (!message)
     return "";
@@ -377,7 +377,7 @@ function isEmptyChatCompletion(response) {
   return messageText(message) === "" && messageToolCalls(message).length === 0;
 }
 
-// packages/gitclaw-runtime/src/router.ts
+// src/router.ts
 var PROVIDER_ORDER = ["tokenrouter", "opencode", "mistral"];
 var failedKeysCooldown = new Map;
 var providerRateLimitedUntil = new Map;
@@ -583,7 +583,7 @@ class CascadeRouter {
   _getTimeout(adapterId, env) {
     const key = `${adapterId.toUpperCase()}_TIMEOUT_MS`;
     const val = parseInt(env[key], 10);
-    return isNaN(val) ? 30000 : Math.min(120000, Math.max(1000, val));
+    return isNaN(val) ? 60000 : Math.min(120000, Math.max(1000, val));
   }
   _list(val) {
     if (typeof val !== "string")
@@ -592,7 +592,7 @@ class CascadeRouter {
   }
 }
 
-// packages/gitclaw-runtime/src/worker.ts
+// src/worker.ts
 var corsHeaders = {};
 var HOP_BY_HOP = new Set([
   "connection",
