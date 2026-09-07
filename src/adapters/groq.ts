@@ -22,7 +22,7 @@ function isGroqModel(modelId: string): boolean {
 export class GroqAdapter implements ProviderAdapter {
   id = "groq";
   name = "groq";
-  enabled = true;
+  enabled = false;
 
   getKeys(env: Record<string, unknown>): string[] {
     return [env.GROQ_API_KEY, env.GROQ_API_KEY_BACKUP, env.GROQ_API_KEYS]

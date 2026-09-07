@@ -6,7 +6,7 @@ const DEFAULT_TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1";
 export class TokenRouterAdapter implements ProviderAdapter {
   id = "tokenrouter";
   name = "tokenrouter";
-  enabled = true;
+  enabled = false;
 
   getKeys(env: Record<string, unknown>): string[] {
     return [

@@ -27,7 +27,7 @@ function isOpenRouterModel(modelId: string): boolean {
 export class OpenRouterAdapter implements ProviderAdapter {
   id = "openrouter";
   name = "openrouter";
-  enabled = true;
+  enabled = false;
 
   getKeys(env: Record<string, unknown>): string[] {
     return [

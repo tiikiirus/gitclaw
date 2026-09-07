@@ -7,13 +7,10 @@ import { TokenRouterAdapter } from "./tokenrouter";
 
 export type Role = "planner" | "coder" | "reviewer" | "default";
 
-/** Provider priority: lower number = tried first */
+/** Provider priority: lower number = tried first — only reliable providers remain */
 const PROVIDER_PRIORITY: Record<string, number> = {
-  tokenrouter: 0,
-  groq: 1,
-  openrouter: 2,
-  opencode: 3,
-  mistral: 4,
+  opencode: 0,
+  mistral: 1,
 };
 
 export class ModelRegistry {
