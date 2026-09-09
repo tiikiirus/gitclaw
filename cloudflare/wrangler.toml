@@ -7,6 +7,9 @@ workers_dev = true
 enabled = true
 
 [vars]
+NOUS_BASE_URL = "https://inference-api.nousresearch.com/v1"
+NOUS_MODEL = "stepfun/step-3.7-flash:free"
+NOUS_TIMEOUT_MS = "90000"
 TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1"
 TOKENROUTER_MODEL = "z-ai/glm-5.3-free"
 TOKENROUTER_TIMEOUT_MS = "90000"
@@ -22,14 +25,15 @@ OPENCODE_TIMEOUT_MS = "90000"
 MISTRAL_BASE_URL = "https://api.mistral.ai/v1"
 MISTRAL_MODEL = "mistral-small-latest"
 MISTRAL_TIMEOUT_MS = "90000"
-MODEL_DEFAULT = "hy3-free,deepseek-v4-flash-free,mistral-small-latest"
-MODEL_PLANNER = "hy3-free,deepseek-v4-flash-free,mistral-small-latest"
-MODEL_CODER = "hy3-free,deepseek-v4-flash-free,mistral-small-latest"
-MODEL_REVIEWER = "hy3-free,deepseek-v4-flash-free,laguna-s-2.1-free,mistral-small-latest"
+MODEL_DEFAULT = "stepfun/step-3.7-flash:free,hy3-free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_PLANNER = "stepfun/step-3.7-flash:free,hy3-free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_CODER = "stepfun/step-3.7-flash:free,hy3-free,deepseek-v4-flash-free,mistral-small-latest"
+MODEL_REVIEWER = "stepfun/step-3.7-flash:free,poolside/laguna-xs-2.1:free,hy3-free,deepseek-v4-flash-free,laguna-s-2.1-free,mistral-small-latest"
 
 # Secrets are intentionally not stored here.
 # Configure runtime secrets in Cloudflare Worker settings or GitHub Actions secrets:
 # - LLM_PROXY_API_KEY / KEY_PLANNER / KEY_CODER / KEY_REVIEWER
+# - NOUS_API_KEY / NOUS_API_KEY_BACKUP / NOUS_API_KEYS
 # - TOKENROUTER_API_KEY / TOKENROUTER_API_KEY_BACKUP / TOKENROUTER_API_KEYS
 # - OPENCODE_API_KEY / OPENCODE_API_KEY_BACKUP / OPENCODE_API_KEYS
 # - MISTRAL_API_KEY / MISTRAL_API_KEY_BACKUP / MISTRAL_API_KEYS

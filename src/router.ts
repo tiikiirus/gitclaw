@@ -411,3 +411,9 @@ export class CascadeRouter {
       .filter(Boolean);
   }
 }
+
+/** Test hook: clear circuit-breaker state (module-level maps survive tests). */
+export function resetCircuitBreakerState(): void {
+  failedKeysCooldown.clear();
+  providerRateLimitedUntil.clear();
+}

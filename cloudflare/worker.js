@@ -15,7 +15,7 @@ function isGroqModel(modelId) {
 class GroqAdapter {
   id = "groq";
   name = "groq";
-  enabled = true;
+  enabled = false;
   getKeys(env) {
     return [env.GROQ_API_KEY, env.GROQ_API_KEY_BACKUP, env.GROQ_API_KEYS].filter((value) => typeof value === "string").flatMap((value) => value.split(",")).map((key) => key.trim()).filter(Boolean);
   }
@@ -121,6 +121,88 @@ class MistralAdapter {
   }
   isSuccess(response) {
     return response.ok;
+  }
+}
+
+// src/adapters/nous.ts
+var DEFAULT_NOUS_BASE_URL = "https://inference-api.nousresearch.com/v1";
+var DEFAULT_NOUS_MODEL = "stepfun/step-3.7-flash:free";
+var NOUS_MODEL_SCORES = {
+  "stepfun/step-3.7-flash:free": { planning: 86, coding: 84, review: 87 },
+  "poolside/laguna-xs-2.1:free": { planning: 82, coding: 88, review: 86 },
+  "z-ai/glm-5.3-flash:free": { planning: 80, coding: 82, review: 83 },
+  "minimax/minimax-m3:free": { planning: 78, coding: 80, review: 81 }
+};
+function isNousModel(modelId) {
+  return modelId.endsWith(":free") && modelId.includes("/");
+}
+
+class NousAdapter {
+  id = "nous";
+  name = "nous";
+  enabled = true;
+  getKeys(env) {
+    return [
+      env.NOUS_API_KEY,
+      env.NOUS_API_KEY_BACKUP,
+      env.NOUS_API_KEYS
+    ].filter((value) => typeof value === "string").flatMap((value) => value.split(",")).map((key) => key.trim()).filter(Boolean);
+  }
+  async fetchModels(env) {
+    if (this.getKeys(env).length === 0)
+      return [];
+    let modelIds = Object.keys(NOUS_MODEL_SCORES);
+    try {
+      const response = await fetch(`${this.baseUrl(env)}/models`, {
+        headers: { Authorization: `Bearer ${this.getKeys(env)[0]}` },
+        signal: AbortSignal.timeout(1e4)
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        const discovered = (payload.data || []).map((model) => model.id).filter((id) => typeof id === "string").filter(isNousModel);
+        if (discovered.length > 0)
+          modelIds = discovered;
+      }
+    } catch (error) {
+      console.warn("[Nous] Model discovery failed; using configured fallback list", error);
+    }
+    return modelIds.map((modelId) => ({
+      id: modelId,
+      providerId: this.id,
+      providerName: modelId,
+      pricing: { prompt: 0, completion: 0 },
+      supportsVision: false,
+      contextLength: 131072,
+      scores: NOUS_MODEL_SCORES[modelId] || {
+        planning: 75,
+        coding: 75,
+        review: 75
+      }
+    }));
+  }
+  prepareRequest(modelId, originalBody, env, key) {
+    const keys = this.getKeys(env);
+    if (keys.length === 0)
+      return null;
+    const configuredModel = env.NOUS_MODEL?.trim() || DEFAULT_NOUS_MODEL;
+    const requestedModel = !modelId || modelId === "auto" ? configuredModel : modelId;
+    if (!isNousModel(requestedModel))
+      return null;
+    const chatBase = this.baseUrl(env).replace(/\/+$/, "");
+    return {
+      url: `${chatBase}/chat/completions`,
+      headers: {
+        Authorization: `Bearer ${key || keys[0]}`,
+        "Content-Type": "application/json"
+      },
+      body: { ...originalBody, model: requestedModel }
+    };
+  }
+  isSuccess(response) {
+    return response.ok;
+  }
+  baseUrl(env) {
+    return env.NOUS_BASE_URL?.trim() || DEFAULT_NOUS_BASE_URL;
   }
 }
 
@@ -235,7 +317,7 @@ function isOpenRouterModel(modelId) {
 class OpenRouterAdapter {
   id = "openrouter";
   name = "openrouter";
-  enabled = true;
+  enabled = false;
   getKeys(env) {
     return [
       env.OPENROUTER_API_KEY,
@@ -289,7 +371,7 @@ var DEFAULT_TOKENROUTER_BASE_URL = "https://api.tokenrouter.com/v1";
 class TokenRouterAdapter {
   id = "tokenrouter";
   name = "tokenrouter";
-  enabled = true;
+  enabled = false;
   getKeys(env) {
     return [
       env.TOKENROUTER_API_KEY,
@@ -339,15 +421,14 @@ class TokenRouterAdapter {
 
 // src/adapters/registry.ts
 var PROVIDER_PRIORITY = {
-  tokenrouter: 0,
-  groq: 1,
-  openrouter: 2,
-  opencode: 3,
-  mistral: 4
+  nous: 0,
+  opencode: 1,
+  mistral: 2
 };
 
 class ModelRegistry {
   adapters = [
+    new NousAdapter,
     new TokenRouterAdapter,
     new GroqAdapter,
     new OpenRouterAdapter,

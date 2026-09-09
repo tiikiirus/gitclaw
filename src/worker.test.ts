@@ -8,13 +8,14 @@ import {
   test,
 } from "bun:test";
 import { getRegistry } from "./adapters/registry";
-import { CascadeRouter } from "./router";
+import { CascadeRouter, resetCircuitBreakerState } from "./router";
 import worker from "./worker";
 
 const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   getRegistry().invalidateCache();
+  resetCircuitBreakerState();
 });
 
 afterEach(() => {
@@ -35,17 +36,9 @@ describe("Responses API compatibility", () => {
       service: "gitclaw-runtime",
       ready: false,
       authentication_configured: false,
-      provider_order: [
-        "tokenrouter",
-        "groq",
-        "openrouter",
-        "opencode",
-        "mistral",
-      ],
+      provider_order: ["nous", "opencode", "mistral"],
       providers: [
-        { id: "tokenrouter", configured: false },
-        { id: "groq", configured: false },
-        { id: "openrouter", configured: false },
+        { id: "nous", configured: false },
         { id: "opencode", configured: false },
         { id: "mistral", configured: false },
       ],
@@ -54,7 +47,7 @@ describe("Responses API compatibility", () => {
     const available = await worker.fetch(
       new Request("https://worker.test/v1/status"),
       {
-        TOKENROUTER_API_KEY: "not-returned-to-client",
+        NOUS_API_KEY: "not-returned-to-client",
         LLM_PROXY_API_KEY: "proxy-key-not-returned",
       },
     );
@@ -65,7 +58,7 @@ describe("Responses API compatibility", () => {
       ready: true,
       authentication_configured: true,
       providers: expect.arrayContaining([
-        { id: "tokenrouter", configured: true },
+        { id: "nous", configured: true },
       ]),
     });
     expect(JSON.stringify(payload)).not.toContain("not-returned-to-client");
@@ -124,8 +117,8 @@ describe("Responses API compatibility", () => {
         }),
       }),
       {
-        TOKENROUTER_API_KEY: "upstream-key",
-        TOKENROUTER_BASE_URL: "https://provider.test/v1",
+        OPENCODE_API_KEY: "upstream-key",
+        OPENCODE_BASE_URL: "https://provider.test/v1",
         LLM_PROXY_API_KEY: "test-proxy-key",
       },
     );
@@ -551,7 +544,10 @@ describe("Responses API compatibility", () => {
     const upstreamBodies: Record<string, unknown>[] = [];
     globalThis.fetch = mock(
       async (_url: string | Request, init?: RequestInit) => {
-        upstreamBodies.push(JSON.parse(init?.body as string));
+        // Model-discovery GETs carry no body; only record chat payloads.
+        if (init?.body) {
+          upstreamBodies.push(JSON.parse(init.body as string));
+        }
         return new Response(
           JSON.stringify({
             id: "chatcmpl-tool-history",
@@ -617,8 +613,8 @@ describe("Responses API compatibility", () => {
       }),
       {
         LLM_PROXY_API_KEY: "test-proxy-key",
-        TOKENROUTER_API_KEY: "upstream-key",
-        TOKENROUTER_BASE_URL: "https://provider.test/v1",
+        OPENCODE_API_KEY: "upstream-key",
+        OPENCODE_BASE_URL: "https://provider.test/v1",
       },
     );
 
