@@ -145,11 +145,18 @@ function buildUserMessage(
   event: Awaited<ReturnType<typeof parseEvent>>,
 ): string {
   if (event.isPullRequest && event.prDiff) {
+    // The excerpt is capped for provider context windows — say so in-band.
+    // Without the banner a reviewer treats the excerpt as the complete diff:
+    // a file after the cut looks "unchanged" and findings get fabricated
+    // (observed live 2026-09-14: "file not in diff" on a file that was
+    // simply past the 24 000-char cut).
+    const cut = event.prDiff.length > 24000;
     return `Here is the Pull Request Diff to analyze:
 \`\`\`diff
 ${event.prDiff.substring(0, 24000)}
 \`\`\`
-
+${cut ? `\nNOTE: the excerpt above is truncated at 24 000 of ${event.prDiff.length} chars. A file missing from this excerpt may still be changed by the PR — the authoritative changed-file list is the fetchPrDiff tool, and any file the PR touches can be read with readRepoFile (PR-head reads are served first).
+` : ""}
 Here is the user's request / event data:
 ${event.userRequest}
 

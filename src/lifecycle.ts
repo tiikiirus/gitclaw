@@ -62,10 +62,54 @@ async function fetchPrDiff(
 }
 
 /**
+ * Lists the paths a PR touches, from the files API — the authoritative
+ * allowlist for PR-head reads and "which files changed" questions.
+ *
+ * Why not parse the diff: the diff endpoint is a single response that large
+ * PRs truncate silently (observed live 2026-09-14 on tiikiirus/fantrax#149:
+ * a 10-file PR served 71,057 chars ending before the last `diff --git`
+ * block), and the caller cannot tell an honest "no change" from a cut-off.
+ * The files API paginates cleanly, so nothing vanishes from the list.
+ */
+export async function fetchPrFilePaths(
+  repo: string,
+  prNumber: number,
+  token: string,
+): Promise<string[]> {
+  const paths: string[] = [];
+  let page = 1;
+  for (;;) {
+    const url = `https://api.github.com/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "User-Agent": "Bun-GitHub-Actions",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch PR files: ${response.statusText} (${await response.text()})`,
+      );
+    }
+    const files: any[] = await response.json();
+    for (const f of files) {
+      if (typeof f.filename === "string") paths.push(f.filename);
+      // A rename has two sides; the old path stays readable on the head ref.
+      if (typeof f.previous_filename === "string") paths.push(f.previous_filename);
+    }
+    if (files.length < 100 || page >= 20) break;
+    page += 1;
+  }
+  return [...new Set(paths)];
+}
+
+/**
  * Reads a file from a PR's head commit via the GitHub Contents API.
- * Used as a fallback by `readRepoFile` when a file exists only in the PR
- * (i.e. it is not present in the base checkout that the reviewer runs against).
- * The requested path is restricted to files touched by the PR diff to avoid
+ * Used as the primary source by `readRepoFile` for PR-touched files, and as
+ * the fallback when a file exists only in the PR (i.e. it is not present in
+ * the base checkout that the reviewer runs against).
+ * The requested path is restricted to files touched by the PR to avoid
  * exposing arbitrary repository contents through an untrusted PR ref.
  */
 async function fetchPrFile(
@@ -208,6 +252,11 @@ export interface EventInfo {
   prDiff: string;
   /** Head commit SHA of the PR, used to read PR-only files via the GitHub API. */
   headSha?: string;
+  /**
+   * Paths the PR touches, from the files API (authoritative). Parsed from
+   * the diff only as a fallback — the diff truncates silently on large PRs.
+   */
+  prFilePaths?: string[];
 }
 
 export function buildStaticContext(repoRoot = REPO_ROOT): string {
@@ -282,6 +331,7 @@ export async function parseEvent(): Promise<EventInfo> {
   let isPullRequest = false;
   let prDiff = "";
   let headSha: string | undefined = undefined;
+  let prFilePaths: string[] | undefined = undefined;
 
   if (eventName === "pull_request" || eventName === "pull_request_target") {
     isPullRequest = true;
@@ -298,10 +348,48 @@ export async function parseEvent(): Promise<EventInfo> {
     } catch (diffErr) {
       console.error("Failed to fetch PR diff, proceeding without it:", diffErr);
     }
+    // The files API is the authoritative touched-path list; the diff is a
+    // fallback only, because it truncates silently on large PRs.
+    try {
+      prFilePaths = await fetchPrFilePaths(repo, prNumber, token);
+    } catch (filesErr) {
+      console.warn(
+        "Failed to fetch PR file list, falling back to diff parsing:",
+        filesErr,
+      );
+    }
   } else if (eventName === "issue_comment") {
     issueNumber = event.issue?.number;
     const author = event.comment?.user?.login;
     userRequest = `Comment by ${author} in issue #${issueNumber}:\n\n${event.comment.body}`;
+    // A comment on a PR carries full PR context in the issue payload. Tools
+    // need prNumber/headSha to read PR-head state: comment-triggered reviews
+    // used to run with base-only context and silently reviewed pre-PR files.
+    if (event.issue?.pull_request && issueNumber) {
+      prNumber = issueNumber;
+      try {
+        const prResponse = await fetch(
+          `https://api.github.com/repos/${repo}/pulls/${prNumber}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json",
+              "User-Agent": "Bun-GitHub-Actions",
+            },
+          },
+        );
+        if (prResponse.ok) {
+          const pr: any = await prResponse.json();
+          headSha = pr.head?.sha;
+          prFilePaths = await fetchPrFilePaths(repo, prNumber, token);
+        }
+      } catch (ctxErr) {
+        console.warn(
+          "Failed to enrich issue_comment with PR context:",
+          ctxErr,
+        );
+      }
+    }
   } else if (eventName === "issues") {
     issueNumber = event.issue?.number;
     const author = event.issue?.user?.login;
@@ -333,6 +421,7 @@ export async function parseEvent(): Promise<EventInfo> {
     userRequest,
     prDiff,
     headSha,
+    prFilePaths,
   };
 }
 
@@ -428,8 +517,10 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
   const { repo, token, prDiff, prNumber, issueNumber, headSha } = event;
   const targetNumber = prNumber || issueNumber!;
 
-  // Files touched by the PR, used to restrict PR-head file reads.
-  const prFilePaths = new Set<string>();
+  // Files touched by the PR, used to restrict PR-head file reads. The files
+  // API list (event.prFilePaths) is authoritative; diff parsing stays as a
+  // fallback because the diff endpoint truncates silently on large PRs.
+  const prFilePaths = new Set<string>(event.prFilePaths ?? []);
   if (prDiff) {
     const re = /^diff --git a\/(.+?) b\/(.+?)$/gm;
     let m: RegExpExecArray | null;
@@ -480,6 +571,28 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
         throw new Error(
           `Permission denied: Cannot read file outside repository workspace: ${filePath}`,
         );
+      }
+      // PR-touched files are read from the PR head FIRST: the local checkout
+      // is the base branch, so for any file the PR modifies the base copy is
+      // the pre-review version. Silently serving it produced false "this
+      // change does not exist" findings (observed live 2026-09-14, PR #149
+      // of tiikiirus/fantrax: the reviewer read the base next.config.ts and
+      // concluded the PR's edit was absent). A deleted file 404s on the head
+      // and falls through to the base checkout — the last place it exists.
+      if (prNumber && headSha && prFilePaths.has(filePath)) {
+        try {
+          const content = await fetchPrFile(
+            repo,
+            prNumber,
+            token,
+            filePath,
+            headSha,
+            prFilePaths,
+          );
+          return { content };
+        } catch (err: any) {
+          if (!/Not Found|404/.test(String(err?.message ?? ""))) throw err;
+        }
       }
       // Local checkout is the base branch; PR-only files live on the PR head.
       try {
