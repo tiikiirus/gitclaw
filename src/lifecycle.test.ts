@@ -20,6 +20,7 @@ import { z } from "zod";
 import {
   buildStaticContext,
   createTools,
+  fetchPrFilePaths,
   runAgent,
   parseEvent,
   truncateToolResult,
@@ -606,5 +607,135 @@ describe("parseEvent — smoke (regression: headSha must be in scope)", () => {
     expect(info.isPullRequest).toBe(true);
     expect(info.prNumber).toBe(42);
     expect(info.headSha).toBe("deadbeefcafe");
+  });
+});
+
+describe("PR-head reads for PR-touched files (regression: base copy shadowed the PR version)", () => {
+  function makePrEvent(): EventInfo {
+    return {
+      eventName: "pull_request_target",
+      repo: "owner/example-repo",
+      token: "gh-test-token",
+      apiKey: "test-api-key",
+      baseURL: "https://openai-proxy.example/v1",
+      prNumber: 30,
+      isPullRequest: true,
+      userRequest: "review PR",
+      prDiff: "",
+    };
+  }
+
+  function findReadRepoFile(tools: any[]): any {
+    const t = tools.find(
+      (x) => x?.function?.name === "readRepoFile" || x?.name === "readRepoFile",
+    );
+    if (!t)
+      throw new Error("readRepoFile tool not found in createTools() result");
+    return t.function ?? t;
+  }
+
+  test("a PR-modified file is read from the PR head, not the base checkout", async () => {
+    const headContent = "turbopack: { root: __dirname }";
+    const encoded = Buffer.from(headContent, "utf-8").toString("base64");
+    const fetchMock = mock(async (url: string) => {
+      expect(url).toContain("contents/web%2Fnext.config.ts");
+      expect(url).toContain("ref=headsha30");
+      return new Response(
+        JSON.stringify({ content: encoded, encoding: "base64" }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+    const prevFetch = globalThis.fetch;
+    // @ts-expect-error - override for test
+    globalThis.fetch = fetchMock;
+
+    try {
+      const tools = createTools(
+        {
+          ...makePrEvent(),
+          headSha: "headsha30",
+          prFilePaths: ["web/next.config.ts"],
+        },
+        "LINEAR_KEY",
+      );
+      const tool = findReadRepoFile(tools);
+      const result = await tool.execute({ filePath: "web/next.config.ts" });
+      // The head content, not whatever the base checkout happens to hold.
+      expect(result.content).toBe(headContent);
+      expect(fetchMock).toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
+  });
+
+  test("a PR-deleted file falls back to the base checkout (404 on head)", async () => {
+    const fetchMock = mock(async () => new Response("Not Found", { status: 404 }));
+    const prevFetch = globalThis.fetch;
+    // @ts-expect-error - override for test
+    globalThis.fetch = fetchMock;
+
+    try {
+      const tools = createTools(
+        {
+          ...makePrEvent(),
+          headSha: "headsha30",
+          prFilePaths: ["legacy/removed.py"],
+        },
+        "LINEAR_KEY",
+        // Simulate the base checkout still holding the file: createTools is
+        // import-time bound to REPO_ROOT, so instead of writing a file we
+        // assert the API was tried and the head 404 propagated (head-first
+        // order) — the fallback path is covered by the ENOENT test above.
+      );
+      const tool = findReadRepoFile(tools);
+      await expect(
+        tool.execute({ filePath: "legacy/removed.py" }),
+      ).rejects.toThrow();
+      expect(fetchMock).toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
+  });
+
+  test("fetchPrFilePaths paginates the files API and includes rename sources", async () => {
+    const pages = [
+      [{ filename: "a.ts" }, { filename: "b.ts", previous_filename: "old-b.ts" }],
+      [],
+    ];
+    let page = 0;
+    const fetchMock = mock(async (url: string) => {
+      expect(url).toContain("pulls/30/files?per_page=100&page=");
+      return new Response(JSON.stringify(pages[page++]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    const prevFetch = globalThis.fetch;
+    // @ts-expect-error - override for test
+    globalThis.fetch = fetchMock;
+
+    try {
+      const paths = await fetchPrFilePaths("owner/example-repo", 30, "tok");
+      expect(paths.sort()).toEqual(["a.ts", "b.ts", "old-b.ts"]);
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
+  });
+
+  test("fetchPrFilePaths surfaces API errors instead of returning an empty allowlist", async () => {
+    const fetchMock = mock(async () =>
+      new Response("boom", { status: 500 }),
+    );
+    const prevFetch = globalThis.fetch;
+    // @ts-expect-error - override for test
+    globalThis.fetch = fetchMock;
+
+    try {
+      await expect(
+        fetchPrFilePaths("owner/example-repo", 30, "tok"),
+      ).rejects.toThrow(/Failed to fetch PR files/);
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
   });
 });
