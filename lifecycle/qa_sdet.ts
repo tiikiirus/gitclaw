@@ -117,12 +117,12 @@ Severity:
 ## Dynamic tools — USE THEM, do not guess
 
 - \`searchCode\` — grep the codebase for function/type/constant usage. Essential for finding
-   existing tests that reference changed symbols.
+  existing tests that reference changed symbols.
 - \`readRepoFile\` — read any file in the repo. Read the actual test file before claiming a
-   test is missing; the test may exist in a file with a non-obvious name.
+  test is missing; the test may exist in a file with a non-obvious name.
 - \`listRepoDirectory\` — enumerate \`tests/\` to discover test files.
 - \`readLinearIssue\` — read a Linear issue (e.g. "ABC-123") to check for explicit test
-   requirements in the DoD.
+  requirements in the DoD.
 
 DO NOT GUESS. A false "missing test" finding wastes the maintainer's time — verify with
 \`readRepoFile\` first.
