@@ -658,7 +658,7 @@ export function createTools(event: EventInfo, linearApiKey?: string) {
     inputSchema: z.object({
       issueId: z
         .string()
-        .describe("The Linear issue identifier (e.g. 'ABC-123')."),
+        .describe("The Linear issue identifier (e.g., 'ABC-123')."),
     }),
     outputSchema: z.object({
       title: z.string(),
